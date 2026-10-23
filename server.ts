@@ -1,6 +1,7 @@
 import 'dotenv/config';
 import express from 'express';
 import path from 'path';
+import fs from 'fs';
 import { fileURLToPath } from 'url';
 import { GoogleGenAI } from '@google/genai';
 import { KARNATAKA_DESTINATIONS, ALL_CURATED_DESTINATIONS, getDestinationById } from './src/data/destinations';
@@ -650,9 +651,37 @@ if (process.env.NODE_ENV !== 'production') {
   });
   app.use(vite.middlewares);
 } else {
-  app.use(express.static(path.resolve(__dirname, 'dist')));
-  app.get('*', (_req, res) => {
-    res.sendFile(path.resolve(__dirname, 'dist', 'index.html'));
+  const distDir = path.resolve(__dirname, 'dist');
+  const distIndexHtml = path.resolve(distDir, 'index.html');
+
+  // Fail fast with clear diagnostic message if required frontend production build is missing
+  if (!fs.existsSync(distIndexHtml)) {
+    console.error('========================================================================');
+    console.error('[Production Startup Failure] Frontend production build not found!');
+    console.error(`Expected file at: ${distIndexHtml}`);
+    console.error('');
+    console.error('Root Cause: The server was started in production (NODE_ENV=production),');
+    console.error('but "npm run build" (or "vite build") was not executed beforehand.');
+    console.error('');
+    console.error('Action Required for Render:');
+    console.error('  1. In your Render Dashboard -> Settings -> Build Command:');
+    console.error('     Set Build Command to: npm install && npm run build');
+    console.error('  2. Ensure Start Command is: npm start');
+    console.error('========================================================================');
+    process.exit(1);
+  }
+
+  app.use(express.static(distDir));
+
+  // SPA fallback for client-side navigation (do not intercept API routes)
+  app.get('*', (req, res) => {
+    if (req.path.startsWith('/api')) {
+      return res.status(404).json({
+        success: false,
+        error: `API route '${req.path}' not found`
+      });
+    }
+    res.sendFile(distIndexHtml);
   });
 }
 

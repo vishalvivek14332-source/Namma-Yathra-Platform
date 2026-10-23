@@ -3,14 +3,16 @@ import dns from 'dns';
 import { KARNATAKA_DESTINATIONS, ALL_CURATED_DESTINATIONS, Destination } from '../data/destinations';
 
 // Ensure Windows environments can reliably resolve MongoDB Atlas SRV records
-try {
-  dns.setDefaultResultOrder?.('ipv4first');
-  const servers = dns.getServers?.() || [];
-  if (servers.length === 0 || servers.every(s => s.startsWith('127.'))) {
-    dns.setServers(['8.8.8.8', '1.1.1.1', '8.8.4.4']);
+if (process.platform === 'win32') {
+  try {
+    dns.setDefaultResultOrder?.('ipv4first');
+    const servers = dns.getServers?.() || [];
+    if (servers.length === 0 || servers.every(s => s.startsWith('127.'))) {
+      dns.setServers(['8.8.8.8', '1.1.1.1', '8.8.4.4']);
+    }
+  } catch {
+    // Ignore DNS config errors
   }
-} catch {
-  // Ignore DNS config errors
 }
 
 // Ensure Bun compatibility with bson startupSnapshot if running under Bun
@@ -77,6 +79,7 @@ export type DbErrorReason =
   | 'missing_env'
   | 'invalid_scheme'
   | 'auth_failed'
+  | 'tls_failed'
   | 'dns_failed'
   | 'network_timeout'
   | 'unknown';
@@ -166,7 +169,29 @@ export function diagnoseMongoError(err: any): { reason: DbErrorReason; message: 
   ) {
     return {
       reason: 'auth_failed',
-      message: 'MongoDB Atlas authentication failed. Please verify your database username and password. Ensure special characters in password are percent-encoded (e.g. %40 for @).'
+      message: 'MongoDB Atlas authentication failed. Please verify your database username and password in MONGODB_URI. Ensure special characters in password are percent-encoded (e.g. %40 for @).'
+    };
+  }
+
+  if (
+    msg.includes('SSL routines') ||
+    msg.includes('ssl3_read_bytes') ||
+    msg.includes('tlsv1 alert') ||
+    msg.includes('TLSWrap') ||
+    msg.includes('ERR_SSL') ||
+    msg.includes('HANDSHAKE_FAILURE') ||
+    msg.toLowerCase().includes('certificate') ||
+    msg.toLowerCase().includes('tls')
+  ) {
+    if (msg.includes('tlsv1 alert internal error') || msg.includes('ssl3_read_bytes')) {
+      return {
+        reason: 'tls_failed',
+        message: 'MongoDB Atlas TLS handshake failed (tlsv1 alert internal error). This occurs when the deployment host (Render) is blocked by MongoDB Atlas Network Access. In your MongoDB Atlas dashboard, navigate to "Security" -> "Network Access" -> "Add IP Address", and add 0.0.0.0/0 (Allow access from anywhere).'
+      };
+    }
+    return {
+      reason: 'tls_failed',
+      message: 'MongoDB Atlas TLS/SSL connection error: ' + sanitizeMongoUri(msg) + '. Verify that TLS is enabled and network access is permitted.'
     };
   }
 
@@ -184,14 +209,14 @@ export function diagnoseMongoError(err: any): { reason: DbErrorReason; message: 
 
   if (
     msg.includes('Server selection timed out') ||
+    msg.includes('MongoServerSelectionError') ||
     msg.includes('timed out') ||
     msg.includes('ETIMEDOUT') ||
-    msg.includes('ECONNREFUSED') ||
-    msg.includes('MongoServerSelectionError')
+    msg.includes('ECONNREFUSED')
   ) {
     return {
       reason: 'network_timeout',
-      message: 'MongoDB Atlas connection timed out. Check MongoDB Atlas Network Access: ensure your current IP address (or 0.0.0.0/0) is in the IP Access List.'
+      message: 'MongoDB Atlas connection or server selection timed out. Ensure your cluster is running and 0.0.0.0/0 is enabled in MongoDB Atlas Network Access.'
     };
   }
 
@@ -243,7 +268,7 @@ export async function connectToDatabase(): Promise<{ connected: boolean; error?:
       error: errorMsg,
       lastAttemptAt: new Date().toISOString()
     };
-    console.warn('[MongoDB] MONGODB_URI is not configured in .env. Database routes will operate in standby mode.');
+    console.warn('[MongoDB] MONGODB_URI is not configured in environment. Database routes will operate in standby mode.');
     isConnected = false;
     return { connected: false, error: errorMsg };
   }
@@ -260,23 +285,29 @@ export async function connectToDatabase(): Promise<{ connected: boolean; error?:
 
   try {
     console.log(`[MongoDB] Connecting to database: ${DATABASE_NAME} (${sanitizeMongoUri(uri)})...`);
-    client = new MongoClient(uri, {
+    const isSrv = uri.startsWith('mongodb+srv://');
+    const clientOptions: any = {
       serverSelectionTimeoutMS: 5000,
       connectTimeoutMS: 10000,
-    });
+      maxPoolSize: 10,
+      minPoolSize: 0,
+      retryWrites: true,
+    };
+    if (isSrv) {
+      clientOptions.tls = true;
+    }
+
+    client = new MongoClient(uri, clientOptions);
 
     try {
       await client.connect();
     } catch (firstErr: any) {
       const errMsg = String(firstErr?.message || '');
-      if (errMsg.includes('querySrv') || errMsg.includes('ECONNREFUSED') || errMsg.includes('ENOTFOUND')) {
-        console.warn('[MongoDB] Initial DNS lookup issue, retrying with public DNS resolvers (8.8.8.8, 1.1.1.1)...');
+      if ((errMsg.includes('querySrv') || errMsg.includes('ENOTFOUND')) && process.platform === 'win32') {
+        console.warn('[MongoDB] Windows DNS lookup issue, retrying with public DNS resolvers (8.8.8.8, 1.1.1.1)...');
         try {
           dns.setServers(['8.8.8.8', '1.1.1.1', '8.8.4.4']);
-          client = new MongoClient(uri, {
-            serverSelectionTimeoutMS: 5000,
-            connectTimeoutMS: 10000,
-          });
+          client = new MongoClient(uri, clientOptions);
           await client.connect();
         } catch {
           throw firstErr;
@@ -285,7 +316,12 @@ export async function connectToDatabase(): Promise<{ connected: boolean; error?:
         throw firstErr;
       }
     }
+
     db = client.db(DATABASE_NAME);
+
+    // Verify real connection with an actual ping command before declaring success
+    await db.command({ ping: 1 });
+
     isConnected = true;
     isConnecting = false;
 

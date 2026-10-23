@@ -241,6 +241,42 @@ The application, authentication layer, and database integration are verified wit
 
 ---
 
-## 9. License
+## 9. Render Production Deployment Guide
+
+### Deploying to Render Web Services
+
+Namma Yatra is pre-configured with a Render Blueprint [`render.yaml`](file:///c:/Users/visha/OneDrive/Documents/Kannada/yatraai---karnataka-travel-planner/render.yaml) for automated zero-downtime deployment.
+
+#### Manual Service Configuration in Render Dashboard:
+If you configure the Web Service manually via dashboard instead of the Blueprint:
+1. **Environment:** Node
+2. **Build Command:** `npm install && npm run build` (or `npm run render-build`)
+3. **Start Command:** `npm start`
+4. **Environment Variables:**
+   - `NODE_ENV`: `production`
+   - `MONGODB_URI`: `mongodb+srv://<username>:<password>@<cluster>.mongodb.net/<database>?retryWrites=true&w=majority`
+   - `MONGODB_DB_NAME`: `YatraAI`
+   - `JWT_SECRET`: A secure random secret string for session cookies
+   - `GEMINI_API_KEY`: Your Google Gemini API key
+
+### Troubleshooting Common Deployment Errors
+
+#### 1. Missing Frontend Build (`ENOENT: stat '.../dist/index.html'`)
+- **Root Cause:** Render's default build command is `npm install`, which does not run `vite build`.
+- **Permanent Fix:** Set Render's **Build Command** to `npm install && npm run build`. The server also includes a fail-fast startup check that immediately logs exact setup instructions if the production build is missing.
+
+#### 2. MongoDB Atlas TLS Error (`SSL routines:ssl3_read_bytes:tlsv1 alert internal error`)
+- **Root Cause:** MongoDB Atlas rejects incoming TLS handshakes at its SNI proxy if the client IP is not on the Atlas IP Access List. Because Render's cloud servers use dynamic outbound IPs, connections will fail with `tlsv1 alert internal error` unless Atlas permits them.
+- **Permanent Fix:**
+  1. Open [MongoDB Atlas Dashboard](https://cloud.mongodb.com).
+  2. In the left navigation, click **Network Access** (under **Security**).
+  3. Click **Add IP Address**.
+  4. Click **Allow Access from Anywhere** (`0.0.0.0/0`) and click **Confirm**.
+  5. Wait 1–2 minutes for the rule to apply.
+  6. The backend driver uses Node 20+, `tls: true`, and verifies connection via `ping: 1`. When connected, `/api/db/status` will report `connected: true`.
+
+---
+
+## 10. License
 
 Apache-2.0 License. Data verified against ASI & KSTDC archives.

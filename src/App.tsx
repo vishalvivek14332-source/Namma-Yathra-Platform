@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { EditorialHero } from './components/EditorialHero';
 import { TripPlannerForm } from './components/TripPlannerForm';
+import { EditorialFooter } from './components/EditorialFooter';
 import { InteractiveMap } from './components/InteractiveMap';
 import { ItineraryWorkspace } from './components/ItineraryWorkspace';
 import { BudgetBreakdown } from './components/BudgetBreakdown';
@@ -1239,16 +1240,7 @@ export default function App() {
           </section>
         )}
 
-        {/* 5. TRIP PLANNER FORM */}
-        <section id="planner" className="scroll-mt-24">
-          <TripPlannerForm
-            onPlanTrip={handlePlanTrip}
-            isLoading={isLoading}
-            initialValues={activeFormPreset}
-          />
-        </section>
-
-        {/* 6. REFERENCE ATLAS (When viewing planned itinerary) */}
+        {/* 5. REFERENCE ATLAS (When viewing planned itinerary) */}
         {itinerary && (
           <section id="atlas-section" className="scroll-mt-24 pt-6">
             <CuratedShowcase
@@ -1273,45 +1265,48 @@ export default function App() {
         onPlanJourney={handlePlanJourneyFromSelected}
       />
 
-      {/* QUIET EDITORIAL FOOTER */}
-      <footer className="border-t border-[#E5DFD3] bg-[#FFFEFA] py-10 mt-16 text-xs text-[#77786F]">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-6">
-          <div className="space-y-1 text-center sm:text-left">
-            <div className="flex items-center justify-center sm:justify-start gap-2">
-              <span className="font-editorial text-base font-bold text-[#102D23]">Namma Yatra</span>
-              <span>·</span>
-              <span className="font-kannada text-[#B9684B]">ನಮ್ಮ ಯಾತ್ರೆ · ನಿಮ್ಮ ಕರ್ನಾಟಕ, ನಿಮ್ಮ ಪಯಣ</span>
-            </div>
-            <p className="text-[11px] text-[#77786F]">
-              Your Karnataka. Your Journey. Authenticated cloud sync powered by MongoDB Atlas. Data verified against ASI & KSTDC archives.
-            </p>
-          </div>
+      {/* ============================================================ */}
+      {/* END OF PAGE: PANORAMIC TRIP PLANNER & EDITORIAL FOOTER       */}
+      {/* (Pixel-Identical Composition matching Endofpage.png)         */}
+      {/* ============================================================ */}
+      <section
+        id="planner"
+        className="relative w-full scroll-mt-12 overflow-hidden mt-12 bg-[#EDE8DE]"
+        style={{
+          backgroundImage: "url('/images/background.png')",
+          backgroundSize: 'cover',
+          backgroundPosition: 'center bottom',
+          backgroundRepeat: 'no-repeat'
+        }}
+      >
+        {/* Subtle atmospheric vignette gradient along top */}
+        <div className="absolute top-0 inset-x-0 h-16 bg-gradient-to-b from-[#FAF6ED] to-transparent pointer-events-none" />
 
-          <div className="flex items-center gap-6 font-medium">
-            <button
-              onClick={() => {
-                setActiveNav('home');
-                window.scrollTo({ top: 0, behavior: 'smooth' });
-              }}
-              className="hover:text-[#102D23] transition-colors cursor-pointer"
-            >
-              Discover
-            </button>
-            <button
-              onClick={scrollToPlanner}
-              className="hover:text-[#102D23] transition-colors cursor-pointer"
-            >
-              Trip Planner
-            </button>
-            <button
-              onClick={scrollToAtlas}
-              className="hover:text-[#102D23] transition-colors cursor-pointer"
-            >
-              Karnataka Atlas
-            </button>
-          </div>
+        {/* Centered Trip Planner Form Card */}
+        <div className="relative z-10 max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 pt-8 sm:pt-12 pb-6 sm:pb-10">
+          <TripPlannerForm
+            onPlanTrip={handlePlanTrip}
+            isLoading={isLoading}
+            initialValues={activeFormPreset}
+          />
         </div>
-      </footer>
+
+        {/* Editorial Footer Banner spanning 100% full width directly along bottom */}
+        <EditorialFooter
+          onNavigateHome={() => {
+            setActiveNav('home');
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+          }}
+          onNavigatePlanner={scrollToPlanner}
+          onNavigateAtlas={scrollToAtlas}
+          onNavigateExperiences={() => {
+            const exp = document.getElementById('curated-experiences');
+            if (exp) exp.scrollIntoView({ behavior: 'smooth' });
+            else window.scrollTo({ top: 400, behavior: 'smooth' });
+          }}
+        />
+      </section>
+
 
       {/* Export Modal */}
       {itinerary && (

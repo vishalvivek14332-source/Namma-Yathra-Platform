@@ -375,8 +375,8 @@ export const EditorialHero: React.FC<EditorialHeroProps> = ({
 
       {/* ============================================================ */}
       {/* 2. "EXPLORE BY EXPERIENCE" SECTION: 4-CARD SHOWCASE           */}
-      {/* ============================================================ */}
-      <section className="relative w-full bg-[#F7F4EC] pt-10 sm:pt-14 pb-12 sm:pb-16 lg:pb-20">
+      <section id="curated-experiences" className="relative w-full bg-[#F7F4EC] pt-10 sm:pt-14 pb-12 sm:pb-16 lg:pb-20 scroll-mt-20">
+
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8">
           
           {/* Section Header matching Reference */}

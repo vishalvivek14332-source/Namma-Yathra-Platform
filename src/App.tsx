@@ -157,13 +157,16 @@ export default function App() {
     return [];
   });
 
-  // Authentication State (defaulting to Vishal to match reference demo state)
+  // Authentication State
   const [currentUser, setCurrentUser] = useState<AuthUser | null>(() => {
     try {
+      if (localStorage.getItem('namma_yatra_logged_out') === 'true') {
+        return null;
+      }
       const cached = localStorage.getItem('namma_yatra_auth_user');
       return cached ? JSON.parse(cached) : { id: 'usr-vishal-1', fullName: 'Vishal', email: 'vishal@nammayatra.ai' };
     } catch {
-      return { id: 'usr-vishal-1', fullName: 'Vishal', email: 'vishal@nammayatra.ai' };
+      return null;
     }
   });
   const [isAuthLoading, setIsAuthLoading] = useState<boolean>(false);
@@ -171,6 +174,7 @@ export default function App() {
   const [authModalInitialMode, setAuthModalInitialMode] = useState<'login' | 'signup' | 'forgot'>('login');
   const [pendingSaveAfterAuth, setPendingSaveAfterAuth] = useState<boolean>(false);
   const [userDropdownOpen, setUserDropdownOpen] = useState<boolean>(false);
+  const [formResetKey, setFormResetKey] = useState<number>(0);
 
   // Persist discovery state in localStorage for guest and authenticated persistence
   useEffect(() => {
@@ -191,6 +195,8 @@ export default function App() {
     getCurrentUser()
       .then((res) => {
         if (res.success && res.user) {
+          localStorage.removeItem('namma_yatra_logged_out');
+          localStorage.setItem('namma_yatra_auth_user', JSON.stringify(res.user));
           setCurrentUser(res.user);
           // Fetch count of trips owned by this user
           getSavedTrips().then((tripsRes) => {
@@ -199,20 +205,30 @@ export default function App() {
             }
           });
         } else {
+          if (localStorage.getItem('namma_yatra_logged_out') === 'true') {
+            setCurrentUser(null);
+            setSavedTripsCount(0);
+          } else {
+            const cached = localStorage.getItem('namma_yatra_auth_user');
+            if (cached) {
+              setCurrentUser(JSON.parse(cached));
+            } else {
+              setCurrentUser({ id: 'usr-vishal-1', fullName: 'Vishal', email: 'vishal@nammayatra.ai' });
+            }
+          }
+        }
+      })
+      .catch(() => {
+        if (localStorage.getItem('namma_yatra_logged_out') === 'true') {
+          setCurrentUser(null);
+          setSavedTripsCount(0);
+        } else {
           const cached = localStorage.getItem('namma_yatra_auth_user');
           if (cached) {
             setCurrentUser(JSON.parse(cached));
           } else {
             setCurrentUser({ id: 'usr-vishal-1', fullName: 'Vishal', email: 'vishal@nammayatra.ai' });
           }
-        }
-      })
-      .catch(() => {
-        const cached = localStorage.getItem('namma_yatra_auth_user');
-        if (cached) {
-          setCurrentUser(JSON.parse(cached));
-        } else {
-          setCurrentUser({ id: 'usr-vishal-1', fullName: 'Vishal', email: 'vishal@nammayatra.ai' });
         }
       })
       .finally(() => {
@@ -283,6 +299,11 @@ export default function App() {
 
   // Auth event handlers
   const handleAuthSuccess = (user: AuthUser) => {
+    try {
+      localStorage.removeItem('namma_yatra_logged_out');
+      localStorage.setItem('namma_yatra_auth_user', JSON.stringify(user));
+    } catch (e) {}
+
     setCurrentUser(user);
     setToastMessage(`Welcome back, ${user.fullName}!`);
     setTimeout(() => setToastMessage(null), 4000);
@@ -320,16 +341,54 @@ export default function App() {
 
   const handleLogout = async () => {
     setUserDropdownOpen(false);
+    setMobileMenuOpen(false);
+    setShowSavedModal(false);
+    setShowAuthModal(false);
+    setShowExportModal(false);
+
     try {
       await logoutUser();
-      setCurrentUser(null);
-      setSavedTripsCount(0);
-      setActiveSavedTripId(null);
-      setToastMessage('Signed out of Namma Yatra');
-      setTimeout(() => setToastMessage(null), 3000);
     } catch (err: any) {
       console.error('Logout error:', err);
     }
+
+    // 1. Clear authenticated user session
+    setCurrentUser(null);
+    setSavedTripsCount(0);
+    setActiveSavedTripId(null);
+    setPendingSaveAfterAuth(false);
+
+    // 2. Clear all active journey, itinerary, map selections, and custom stops from website
+    setItinerary(null);
+    setActiveDayIndex(0);
+    setSelectedStopId(null);
+    setSelectedPlaces([]);
+    setStartingLocation(null);
+    setActiveFormPreset(undefined);
+    setErrorMsg(null);
+
+    // 3. Remount TripPlannerForm to pristine initial state
+    setFormResetKey((prev) => prev + 1);
+
+    // 4. Purge all localStorage and sessionStorage so no residual data persists
+    try {
+      localStorage.removeItem(STORAGE_KEY);
+      localStorage.removeItem(LEGACY_STORAGE_KEY);
+      localStorage.removeItem(START_LOC_KEY);
+      localStorage.removeItem(SELECTED_PLACES_KEY);
+      localStorage.removeItem('namma_yatra_auth_user');
+      localStorage.setItem('namma_yatra_logged_out', 'true');
+      sessionStorage.clear();
+    } catch (e) {
+      console.error('Storage clear error:', e);
+    }
+
+    // 5. Smoothly scroll to fresh homepage view
+    setActiveNav('home');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+
+    setToastMessage('Signed out. All journey and profile data cleared.');
+    setTimeout(() => setToastMessage(null), 3500);
   };
 
   // Destination selection handlers
@@ -1285,6 +1344,7 @@ export default function App() {
         {/* Centered Trip Planner Form Card */}
         <div className="relative z-10 max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 pt-8 sm:pt-12 pb-6 sm:pb-10">
           <TripPlannerForm
+            key={formResetKey}
             onPlanTrip={handlePlanTrip}
             isLoading={isLoading}
             initialValues={activeFormPreset}

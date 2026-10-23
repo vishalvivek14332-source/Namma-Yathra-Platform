@@ -812,6 +812,17 @@ export default function App() {
     }
   };
 
+  const handleGoToDashboard = () => {
+    setActiveNav('home');
+    setItinerary(null);
+    setActiveSavedTripId(null);
+    try {
+      localStorage.removeItem(STORAGE_KEY);
+      localStorage.removeItem(LEGACY_STORAGE_KEY);
+    } catch (e) {}
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
   const scrollToPlanner = () => {
     setActiveNav('planner');
     const elem = document.getElementById('planner-form');
@@ -847,8 +858,7 @@ export default function App() {
               href="/"
               onClick={(e) => {
                 e.preventDefault();
-                setActiveNav('home');
-                window.scrollTo({ top: 0, behavior: 'smooth' });
+                handleGoToDashboard();
               }}
               className="flex items-center gap-2.5 group cursor-pointer"
             >
@@ -871,10 +881,7 @@ export default function App() {
           {/* Zone 2: Navigation Links */}
           <nav className="hidden lg:flex items-center gap-7 text-xs font-semibold text-[#555850]">
             <button
-              onClick={() => {
-                setActiveNav('home');
-                window.scrollTo({ top: 0, behavior: 'smooth' });
-              }}
+              onClick={handleGoToDashboard}
               className={`hover:text-[#102D23] transition-colors whitespace-nowrap shrink-0 cursor-pointer ${
                 activeNav === 'home'
                   ? 'text-[#102D23] font-bold border-b-2 border-[#102D23] pb-1'
@@ -1067,9 +1074,8 @@ export default function App() {
 
             <button
               onClick={() => {
-                setActiveNav('home');
                 setMobileMenuOpen(false);
-                window.scrollTo({ top: 0, behavior: 'smooth' });
+                handleGoToDashboard();
               }}
               className="block w-full text-left py-2 text-[#555850]"
             >
@@ -1353,10 +1359,7 @@ export default function App() {
 
         {/* Editorial Footer Banner spanning 100% full width directly along bottom */}
         <EditorialFooter
-          onNavigateHome={() => {
-            setActiveNav('home');
-            window.scrollTo({ top: 0, behavior: 'smooth' });
-          }}
+          onNavigateHome={handleGoToDashboard}
           onNavigatePlanner={scrollToPlanner}
           onNavigateAtlas={scrollToAtlas}
           onNavigateExperiences={() => {

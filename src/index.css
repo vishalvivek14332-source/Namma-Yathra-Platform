@@ -1,0 +1,255 @@
+@import "tailwindcss";
+
+@layer base {
+  :root {
+    --color-forest: #173D2E;
+    --color-evergreen: #102D23;
+    --color-ivory: #F7F4EC;
+    --color-paper: #FFFEFA;
+    --color-terracotta: #B9684B;
+    --color-saffron: #D8A735;
+    --color-charcoal: #292D29;
+    --color-muted: #77786F;
+  }
+
+  body {
+    font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+    color: #292D29;
+    background-color: #F7F4EC;
+  }
+
+  h1, h2, h3, .font-editorial {
+    font-family: 'Playfair Display', Georgia, serif;
+    letter-spacing: -0.015em;
+  }
+
+  .font-kannada {
+    font-family: 'Noto Serif Kannada', 'Playfair Display', Georgia, serif;
+  }
+
+  .font-mono-numbers {
+    font-family: 'JetBrains Mono', monospace;
+    font-variant-numeric: tabular-nums;
+  }
+}
+
+/* Karnataka Panoramic Hero Background */
+.karnataka-hero {
+  position: relative;
+  isolation: isolate;
+  background-image: url("/images/karnataka-hero-background.png");
+  background-size: cover;
+  background-position: center center;
+  background-repeat: no-repeat;
+}
+
+.karnataka-hero::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  background: linear-gradient(
+    90deg,
+    rgba(250, 246, 237, 0.30) 0%,
+    rgba(250, 246, 237, 0.12) 36%,
+    rgba(250, 246, 237, 0.00) 68%
+  );
+}
+
+@media (max-width: 1023px) {
+  .karnataka-hero {
+    background-position: center 25%;
+  }
+  .karnataka-hero::before {
+    background: linear-gradient(
+      180deg,
+      rgba(250, 246, 237, 0.40) 0%,
+      rgba(250, 246, 237, 0.15) 45%,
+      rgba(250, 246, 237, 0.00) 75%
+    );
+  }
+}
+
+/* Subtle fine paper texture overlay */
+.paper-texture {
+  background-image: radial-gradient(rgba(41, 45, 41, 0.03) 1px, transparent 0);
+  background-size: 24px 24px;
+}
+
+/* Image zoom & reveal transitions */
+.img-zoom-container {
+  overflow: hidden;
+}
+
+.img-zoom-container img {
+  transition: transform 0.6s cubic-bezier(0.16, 1, 0.3, 1), filter 0.6s ease;
+}
+
+.img-zoom-container:hover img {
+  transform: scale(1.05);
+}
+
+/* Custom Leaflet Map styling for editorial aesthetic */
+.leaflet-container {
+  font-family: 'Plus Jakarta Sans', system-ui, sans-serif !important;
+  border-radius: 0.875rem;
+  z-index: 10;
+  background-color: #EDE8DE !important;
+}
+
+.leaflet-popup-content-wrapper {
+  background-color: #FFFEFA !important;
+  border: 1px solid #E5DFD3 !important;
+  border-radius: 0.75rem !important;
+  box-shadow: 0 10px 25px -5px rgba(16, 45, 35, 0.15) !important;
+  padding: 0 !important;
+  overflow: hidden;
+}
+
+.leaflet-popup-content {
+  margin: 12px 14px !important;
+  line-height: 1.4 !important;
+}
+
+/* Yatra Atlas Custom Popup & Interactive Action Button */
+.yatra-atlas-popup .leaflet-popup-content-wrapper {
+  padding: 0 !important;
+  border-radius: 12px !important;
+  overflow: hidden;
+  box-shadow: 0 16px 36px -4px rgba(16, 45, 35, 0.22), 0 4px 12px rgba(0, 0, 0, 0.08) !important;
+  border: 1px solid #D5CEBF !important;
+  background-color: #FFFEFA !important;
+}
+
+.yatra-atlas-popup .leaflet-popup-content {
+  margin: 0 !important;
+  line-height: 1.4 !important;
+  width: 100% !important;
+}
+
+.yatra-atlas-popup {
+  margin-bottom: 20px !important;
+}
+
+.yatra-atlas-popup .leaflet-popup-tip {
+  background-color: #FFFEFA !important;
+  box-shadow: 0 4px 10px rgba(16, 45, 35, 0.12) !important;
+}
+
+.atlas-view-details-btn {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  color: #173D2E;
+  font-weight: 700;
+  font-size: 11px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 8px;
+  border-radius: 6px;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  outline: none;
+  white-space: nowrap;
+}
+
+.atlas-view-details-btn:hover {
+  background-color: #EDE8DE;
+  color: #B9684B;
+}
+
+.atlas-view-details-btn:focus-visible {
+  outline: 2px solid #173D2E;
+  outline-offset: 1px;
+}
+
+.atlas-view-details-btn:active {
+  transform: scale(0.96);
+}
+
+.atlas-view-details-btn .atlas-btn-arrow {
+  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  display: inline-block;
+}
+
+.atlas-view-details-btn:hover .atlas-btn-arrow {
+  transform: translateX(4px);
+}
+
+.leaflet-popup-tip {
+  background-color: #FFFEFA !important;
+}
+
+.custom-map-pin {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 9999px;
+  box-shadow: 0 4px 12px rgba(27, 59, 43, 0.35);
+  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.custom-map-pin:hover {
+  transform: scale(1.15);
+}
+
+/* Print styles for export */
+@media print {
+  header, nav, .no-print, button:not(.print-include) {
+    display: none !important;
+  }
+  body {
+    background: white !important;
+    color: black !important;
+  }
+  .print-page-break {
+    page-break-before: always;
+  }
+}
+
+/* Hide scrollbar utility for horizontal scroll tracks without losing functionality */
+.scrollbar-none::-webkit-scrollbar {
+  display: none;
+}
+.scrollbar-none {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+/* Elegant custom scrollbar for results panel */
+.custom-scrollbar::-webkit-scrollbar {
+  width: 6px;
+}
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: #EDE8DE;
+  border-radius: 9999px;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: #C4BCAC;
+  border-radius: 9999px;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: #173D2E;
+}
+.custom-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: #C4BCAC #EDE8DE;
+}
+
+/* Enforce strict page boundary to prevent horizontal blowout on mobile viewports */
+html, body {
+  overflow-x: clip;
+  max-width: 100vw;
+}
+
+/* Accessibility: Respect user prefers-reduced-motion settings */
+@media (prefers-reduced-motion: reduce) {
+  *, ::before, ::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+

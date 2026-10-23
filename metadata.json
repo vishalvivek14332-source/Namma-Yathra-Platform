@@ -1,0 +1,6 @@
+{
+  "name": "Namma Yatra - Karnataka Travel Planner",
+  "description": "Namma Yatra: Your Karnataka. Your Journey. AI-powered travel planner generating personalized itineraries, interactive maps, daily schedules, user accounts, and deterministic budget calculations.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

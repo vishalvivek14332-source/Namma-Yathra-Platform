@@ -1,0 +1,45 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300" width="100%" height="100%">
+  <defs>
+    <linearGradient id="foodGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#1A2E26" />
+      <stop offset="50%" stop-color="#14241E" />
+      <stop offset="100%" stop-color="#0D1713" />
+    </linearGradient>
+    <linearGradient id="goldGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#F59E0B" />
+      <stop offset="100%" stop-color="#D97706" />
+    </linearGradient>
+    <radialGradient id="glow" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#D97706" stop-opacity="0.25" />
+      <stop offset="100%" stop-color="#000000" stop-opacity="0" />
+    </radialGradient>
+  </defs>
+
+  <!-- Background -->
+  <rect width="400" height="300" fill="url(#foodGrad)" />
+  <circle cx="200" cy="140" r="110" fill="url(#glow)" />
+
+  <!-- Traditional Banana Leaf / Thali Plate Motif -->
+  <circle cx="200" cy="130" r="75" fill="none" stroke="#D97706" stroke-width="2" stroke-dasharray="4 4" opacity="0.6" />
+  <circle cx="200" cy="130" r="66" fill="#173D2E" stroke="#F59E0B" stroke-width="1.5" opacity="0.9" />
+
+  <!-- Culinary Icon (Fork, Spoon & Steaming Dish / Dosa) -->
+  <g transform="translate(160, 95) scale(0.08)" fill="#F59E0B">
+    <!-- Steam Lines -->
+    <path d="M 450 150 Q 420 80 460 20 Q 500 -40 470 -100" fill="none" stroke="#F59E0B" stroke-width="30" stroke-linecap="round" opacity="0.8" />
+    <path d="M 550 150 Q 520 80 560 20 Q 600 -40 570 -100" fill="none" stroke="#F59E0B" stroke-width="30" stroke-linecap="round" opacity="0.8" />
+    
+    <!-- Covered cloche / traditional brass plate -->
+    <path d="M 200 480 A 300 240 0 0 1 800 480 Z" fill="#D97706" opacity="0.9" />
+    <circle cx="500" cy="220" r="35" fill="#F59E0B" />
+    <rect x="150" y="480" width="700" height="40" rx="15" fill="#F59E0B" />
+  </g>
+
+  <!-- Elegant Typography -->
+  <text x="200" y="235" text-anchor="middle" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="15" font-weight="600" fill="#FCD34D" letter-spacing="1.5">
+    KARNATAKA CULINARY EXPERIENCE
+  </text>
+  <text x="200" y="258" text-anchor="middle" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="12" fill="#9CA3AF">
+    Verified Regional Food & Heritage Cuisine
+  </text>
+</svg>

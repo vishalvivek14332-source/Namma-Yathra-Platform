@@ -1,7 +1,8 @@
 # Namma Yatra — Your Karnataka. Your Journey.
 ### Editorial AI Travel Planner & Circuit Intelligence for Karnataka
 
-**Live Deployed Applet:** [https://ais-pre-vl7shfbubzvznuqjmfarxa-982092797867.asia-east1.run.app](https://ais-pre-vl7shfbubzvznuqjmfarxa-982092797867.asia-east1.run.app)
+🌐 **Live Production Application:** [https://namma-yathra-platform.onrender.com/](https://namma-yathra-platform.onrender.com/)  
+**Development Preview:** [https://ais-pre-vl7shfbubzvznuqjmfarxa-982092797867.asia-east1.run.app](https://ais-pre-vl7shfbubzvznuqjmfarxa-982092797867.asia-east1.run.app)
 
 ---
 
@@ -242,6 +243,8 @@ The application, authentication layer, and database integration are verified wit
 ---
 
 ## 9. Render Production Deployment Guide
+
+**Live Deployment URL:** [https://namma-yathra-platform.onrender.com/](https://namma-yathra-platform.onrender.com/)
 
 ### Deploying to Render Web Services
 

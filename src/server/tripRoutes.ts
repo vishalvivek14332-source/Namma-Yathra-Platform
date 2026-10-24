@@ -9,7 +9,9 @@ import {
   getDatabaseState,
   getDatabaseError,
   isValidObjectId,
-  DATABASE_NAME
+  DATABASE_NAME,
+  canAttemptReconnect,
+  connectToDatabase
 } from './db';
 import { KARNATAKA_DESTINATIONS } from '../data/destinations';
 import { requireAuth } from './authRoutes';
@@ -53,10 +55,18 @@ function formatTripDoc(doc: any) {
  * GET /api/db/status
  * Returns database connection health without exposing credentials
  */
-tripRouter.get('/db/status', async (_req: Request, res: Response) => {
+tripRouter.get('/db/status', async (req: Request, res: Response) => {
   if (isDatabaseConnecting()) {
     await waitForConnection(3000);
   }
+
+  // Allow bounded retry on demand via ?retry=true or if 30s cooldown elapsed with ?probe=true
+  const shouldRetry = req.query.retry === 'true' || (req.query.probe === 'true' && canAttemptReconnect());
+  if (!isDatabaseConnected() && shouldRetry) {
+    connectToDatabase({ maxRetries: 1 }).catch(() => {});
+    await waitForConnection(2500);
+  }
+
   const dbState = getDatabaseState();
   const connected = isDatabaseConnected();
 
@@ -72,7 +82,8 @@ tripRouter.get('/db/status', async (_req: Request, res: Response) => {
       tripCount: 0,
       destinationCount: 0,
       error: dbState.error,
-      message: dbState.error || 'MongoDB Atlas is in standby mode. Configure MONGODB_URI to enable persistent trip storage.'
+      message: dbState.error || 'MongoDB Atlas is in standby mode. Configure MONGODB_URI to enable persistent trip storage.',
+      diagnostics: dbState.diagnosticsSummary
     });
   }
 
@@ -93,7 +104,8 @@ tripRouter.get('/db/status', async (_req: Request, res: Response) => {
       clusterHost: dbState.clusterHost,
       tripCount,
       destinationCount,
-      message: `Connected to MongoDB Atlas (${DATABASE_NAME})`
+      message: `Connected to MongoDB Atlas (${DATABASE_NAME})`,
+      diagnostics: dbState.diagnosticsSummary
     });
   } catch (err: any) {
     res.status(500).json({

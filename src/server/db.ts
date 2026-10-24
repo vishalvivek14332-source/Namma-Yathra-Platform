@@ -1,5 +1,9 @@
 import { MongoClient, Db, Collection, ObjectId } from 'mongodb';
 import dns from 'dns';
+import net from 'net';
+import tls from 'tls';
+import fs from 'fs';
+import path from 'path';
 import { KARNATAKA_DESTINATIONS, ALL_CURATED_DESTINATIONS, Destination } from '../data/destinations';
 
 // Ensure Windows environments can reliably resolve MongoDB Atlas SRV records
@@ -74,6 +78,8 @@ let client: MongoClient | null = null;
 let db: Db | null = null;
 let isConnected = false;
 let isConnecting = false;
+let lastAttemptTimestamp = 0;
+let lastDiagnostics: AtlasDiagnosticsReport | null = null;
 
 export type DbErrorReason =
   | 'missing_env'
@@ -84,6 +90,15 @@ export type DbErrorReason =
   | 'network_timeout'
   | 'unknown';
 
+export interface DbDiagnosticsSummary {
+  driverVersion: string;
+  nodeVersion: string;
+  dnsSrvSuccess: boolean;
+  tcpSuccess: boolean;
+  tlsProbeSuccess: boolean;
+  outboundIp?: string;
+}
+
 export interface DbConnectionState {
   connected: boolean;
   connecting: boolean;
@@ -93,6 +108,7 @@ export interface DbConnectionState {
   reason?: DbErrorReason;
   clusterHost?: string;
   lastAttemptAt?: string;
+  diagnosticsSummary?: DbDiagnosticsSummary;
 }
 
 let lastConnectionState: DbConnectionState = {
@@ -111,6 +127,22 @@ export function sanitizeMongoUri(uri?: string): string {
     /(mongodb(?:\+srv)?:\/\/[^:]+:)([^@]+)(@.+)/i,
     '$1****$3'
   );
+}
+
+/**
+ * Reads the installed mongodb package version reliably without throwing
+ */
+export function getMongoDriverVersion(): string {
+  try {
+    const pkgPath = path.resolve(process.cwd(), 'node_modules', 'mongodb', 'package.json');
+    if (fs.existsSync(pkgPath)) {
+      const data = JSON.parse(fs.readFileSync(pkgPath, 'utf8'));
+      return data.version || '7.7.0';
+    }
+  } catch {
+    // fallback
+  }
+  return '7.7.0';
 }
 
 /**
@@ -155,9 +187,10 @@ export function inspectMongoUriConfig(uri?: string): {
 }
 
 /**
- * Diagnoses MongoDB connection errors into clear, actionable categories
+ * Diagnoses MongoDB connection errors into clear, evidence-based categories.
+ * Replaces speculative IP access claims with accurate network/TLS classification.
  */
-export function diagnoseMongoError(err: any): { reason: DbErrorReason; message: string } {
+export function diagnoseMongoError(err: any): { reason: DbErrorReason; message: string; rawError: string; code?: string | number } {
   const msg = err?.message || String(err || '');
   const code = err?.code;
 
@@ -169,7 +202,9 @@ export function diagnoseMongoError(err: any): { reason: DbErrorReason; message: 
   ) {
     return {
       reason: 'auth_failed',
-      message: 'MongoDB Atlas authentication failed. Please verify your database username and password in MONGODB_URI. Ensure special characters in password are percent-encoded (e.g. %40 for @).'
+      message: 'MongoDB Atlas authentication failed. Please verify your database username and password in MONGODB_URI. Ensure special characters in password are percent-encoded (e.g. %40 for @).',
+      rawError: sanitizeMongoUri(msg),
+      code
     };
   }
 
@@ -186,12 +221,16 @@ export function diagnoseMongoError(err: any): { reason: DbErrorReason; message: 
     if (msg.includes('tlsv1 alert internal error') || msg.includes('ssl3_read_bytes')) {
       return {
         reason: 'tls_failed',
-        message: 'MongoDB Atlas TLS handshake failed (tlsv1 alert internal error). This occurs when the deployment host (Render) is blocked by MongoDB Atlas Network Access. In your MongoDB Atlas dashboard, navigate to "Security" -> "Network Access" -> "Add IP Address", and add 0.0.0.0/0 (Allow access from anywhere).'
+        message: 'MongoDB Atlas TLS handshake failed (tlsv1 alert internal error: remote peer terminated handshake with alert 80). Possible causes include remote peer access denial for outbound IP or TLS SNI negotiation failure.',
+        rawError: sanitizeMongoUri(msg),
+        code
       };
     }
     return {
       reason: 'tls_failed',
-      message: 'MongoDB Atlas TLS/SSL connection error: ' + sanitizeMongoUri(msg) + '. Verify that TLS is enabled and network access is permitted.'
+      message: 'MongoDB Atlas TLS/SSL connection error: ' + sanitizeMongoUri(msg) + '. Standard certificate verification was enforced.',
+      rawError: sanitizeMongoUri(msg),
+      code
     };
   }
 
@@ -203,7 +242,9 @@ export function diagnoseMongoError(err: any): { reason: DbErrorReason; message: 
   ) {
     return {
       reason: 'dns_failed',
-      message: 'MongoDB Atlas cluster DNS resolution failed. Check your cluster hostname in MONGODB_URI.'
+      message: 'MongoDB Atlas cluster DNS resolution failed. Check your cluster hostname in MONGODB_URI.',
+      rawError: sanitizeMongoUri(msg),
+      code
     };
   }
 
@@ -216,34 +257,264 @@ export function diagnoseMongoError(err: any): { reason: DbErrorReason; message: 
   ) {
     return {
       reason: 'network_timeout',
-      message: 'MongoDB Atlas connection or server selection timed out. Ensure your cluster is running and 0.0.0.0/0 is enabled in MongoDB Atlas Network Access.'
+      message: 'MongoDB Atlas connection or server selection timed out. Network route or port 27017 may be unreachable from deployment host.',
+      rawError: sanitizeMongoUri(msg),
+      code
     };
   }
 
   if (msg.includes('Invalid scheme') || msg.includes('Scheme must be')) {
     return {
       reason: 'invalid_scheme',
-      message: 'Invalid MONGODB_URI scheme. URI must start with mongodb:// or mongodb+srv://.'
+      message: 'Invalid MONGODB_URI scheme. URI must start with mongodb:// or mongodb+srv://.',
+      rawError: sanitizeMongoUri(msg),
+      code
     };
   }
 
   return {
     reason: 'unknown',
-    message: 'MongoDB connection failed: ' + sanitizeMongoUri(msg)
+    message: 'MongoDB connection failed: ' + sanitizeMongoUri(msg),
+    rawError: sanitizeMongoUri(msg),
+    code
   };
 }
 
+export interface AtlasDiagnosticsReport {
+  timestamp: string;
+  nodeVersion: string;
+  driverVersion: string;
+  opensslVersion: string;
+  platform: string;
+  clusterHost: string;
+  targetDatabase: string;
+  outboundIp?: string;
+  dnsSrvSuccess: boolean;
+  dnsSrvRecordCount: number;
+  dnsSrvNodes: string[];
+  dnsSrvError?: string;
+  dnsTxtSuccess: boolean;
+  dnsTxtRecords?: string[];
+  tcpSuccess: boolean;
+  tcpLatencyMs?: number;
+  tcpTarget?: string;
+  tcpError?: string;
+  tlsProbeSuccess: boolean;
+  tlsProtocol?: string;
+  tlsCipher?: string;
+  tlsAuthorized?: boolean;
+  tlsError?: string;
+  mongoErrorCode?: string | number;
+  mongoErrorMessage?: string;
+  retryAttempt?: number;
+}
+
 /**
- * Connects once to MongoDB Atlas using MONGODB_URI environment variable
+ * Runs safe, structured network diagnostics for Atlas connectivity.
+ * Redacts all credentials and prints formatted diagnostic telemetry to Render server logs.
  */
-export async function connectToDatabase(): Promise<{ connected: boolean; error?: string }> {
+export async function runAtlasDiagnostics(
+  clusterHost: string,
+  lastError?: any,
+  retryAttempt: number = 0
+): Promise<AtlasDiagnosticsReport> {
+  const timestamp = new Date().toISOString();
+  const nodeVersion = process.version;
+  const driverVersion = getMongoDriverVersion();
+  const opensslVersion = process.versions.openssl || 'unknown';
+  const platform = `${process.platform} (${process.arch})`;
+
+  // 1. Detect active outbound public IP via lightweight echo service (non-blocking)
+  let outboundIp: string | undefined;
+  try {
+    const ipRes = await fetch('https://api.ipify.org?format=json', {
+      signal: AbortSignal.timeout(2500)
+    });
+    if (ipRes.ok) {
+      const data = await ipRes.json() as any;
+      outboundIp = data?.ip;
+    }
+  } catch {
+    // Non-fatal if offline or blocked
+  }
+
+  // 2. DNS SRV and TXT Resolution
+  let dnsSrvSuccess = false;
+  let dnsSrvNodes: string[] = [];
+  let dnsSrvError: string | undefined;
+  let dnsTxtSuccess = false;
+  let dnsTxtRecords: string[] = [];
+
+  const resolver = new dns.promises.Resolver();
+  try {
+    const srvRecords = await resolver.resolveSrv(`_mongodb._tcp.${clusterHost}`);
+    dnsSrvSuccess = true;
+    dnsSrvNodes = srvRecords.map(r => `${r.name}:${r.port}`);
+  } catch (srvErr: any) {
+    if (process.platform === 'win32') {
+      try {
+        resolver.setServers(['8.8.8.8', '1.1.1.1']);
+        const srvRecords = await resolver.resolveSrv(`_mongodb._tcp.${clusterHost}`);
+        dnsSrvSuccess = true;
+        dnsSrvNodes = srvRecords.map(r => `${r.name}:${r.port}`);
+      } catch (fallbackErr: any) {
+        dnsSrvError = fallbackErr.message || String(fallbackErr);
+      }
+    } else {
+      dnsSrvError = srvErr.message || String(srvErr);
+    }
+  }
+
+  try {
+    const txtRecords = await resolver.resolveTxt(clusterHost);
+    dnsTxtSuccess = true;
+    dnsTxtRecords = txtRecords.map(t => t.join(''));
+  } catch {
+    // TXT record optional or unavailable
+  }
+
+  // 3. TCP Connectivity on port 27017 and TLS Handshake Probe with Standard Verification
+  let tcpSuccess = false;
+  let tcpLatencyMs: number | undefined;
+  let tcpTarget: string | undefined;
+  let tcpError: string | undefined;
+  let tlsProbeSuccess = false;
+  let tlsProtocol: string | undefined;
+  let tlsCipher: string | undefined;
+  let tlsAuthorized: boolean | undefined;
+  let tlsError: string | undefined;
+
+  if (dnsSrvNodes.length > 0) {
+    const [firstHost, firstPortStr] = dnsSrvNodes[0].split(':');
+    const port = parseInt(firstPortStr, 10) || 27017;
+    tcpTarget = `${firstHost}:${port}`;
+
+    const tcpStart = Date.now();
+    await new Promise<void>((resolve) => {
+      const socket = net.createConnection({ host: firstHost, port, timeout: 3500 });
+
+      socket.on('connect', () => {
+        tcpSuccess = true;
+        tcpLatencyMs = Date.now() - tcpStart;
+
+        // Perform standard TLS handshake: rejectUnauthorized strictly true
+        const tlsSocket = tls.connect({
+          socket,
+          servername: firstHost,
+          rejectUnauthorized: true,
+        }, () => {
+          tlsProbeSuccess = true;
+          tlsProtocol = tlsSocket.getProtocol() || 'unknown';
+          const cipher = tlsSocket.getCipher();
+          tlsCipher = cipher ? `${cipher.name} (${cipher.version})` : undefined;
+          tlsAuthorized = tlsSocket.authorized;
+          tlsSocket.end();
+          resolve();
+        });
+
+        tlsSocket.on('error', (err: any) => {
+          tlsError = err.message || String(err);
+          socket.destroy();
+          resolve();
+        });
+      });
+
+      socket.on('error', (err: any) => {
+        tcpError = err.message || String(err);
+        resolve();
+      });
+
+      socket.on('timeout', () => {
+        tcpError = 'Connection timed out after 3500ms';
+        socket.destroy();
+        resolve();
+      });
+    });
+  }
+
+  const report: AtlasDiagnosticsReport = {
+    timestamp,
+    nodeVersion,
+    driverVersion,
+    opensslVersion,
+    platform,
+    clusterHost,
+    targetDatabase: DATABASE_NAME,
+    outboundIp,
+    dnsSrvSuccess,
+    dnsSrvRecordCount: dnsSrvNodes.length,
+    dnsSrvNodes,
+    dnsSrvError,
+    dnsTxtSuccess,
+    dnsTxtRecords,
+    tcpSuccess,
+    tcpLatencyMs,
+    tcpTarget,
+    tcpError,
+    tlsProbeSuccess,
+    tlsProtocol,
+    tlsCipher,
+    tlsAuthorized,
+    tlsError,
+    mongoErrorCode: lastError?.code,
+    mongoErrorMessage: lastError?.message ? sanitizeMongoUri(lastError.message) : undefined,
+    retryAttempt
+  };
+
+  // Structured diagnostic output to server logs (zero secrets exposed)
+  console.error('========================================================================');
+  console.error('[MongoDB Atlas Network Diagnostics - Render Server Report]');
+  console.error(`Timestamp:              ${report.timestamp}`);
+  console.error(`Node.js Runtime:        ${report.nodeVersion} (OpenSSL: ${report.opensslVersion})`);
+  console.error(`MongoDB Driver:         v${report.driverVersion}`);
+  console.error(`Target Host:            ${report.clusterHost}`);
+  console.error(`Target Database:        ${report.targetDatabase}`);
+  console.error(`Detected Outbound IP:   ${report.outboundIp || 'Unavailable / timed out'}`);
+  console.error(`DNS SRV Resolution:     ${report.dnsSrvSuccess ? `SUCCESS (${report.dnsSrvRecordCount} nodes resolved)` : `FAILED (${report.dnsSrvError})`}`);
+  if (report.dnsSrvNodes.length > 0) {
+    report.dnsSrvNodes.forEach((node, idx) => console.error(`  Shard Node [${idx}]:    ${node}`));
+  }
+  console.error(`DNS TXT Resolution:     ${report.dnsTxtSuccess ? `SUCCESS (${report.dnsTxtRecords?.join(';')})` : 'FAILED / NONE'}`);
+  console.error(`TCP Port 27017:         ${report.tcpSuccess ? `SUCCESS (Connected to ${report.tcpTarget} in ${report.tcpLatencyMs}ms)` : `FAILED (${report.tcpError})`}`);
+  console.error(`TLS Handshake Probe:    ${report.tlsProbeSuccess ? `SUCCESS (Protocol: ${report.tlsProtocol}, Cipher: ${report.tlsCipher})` : `FAILED (${report.tlsError || 'Not reached'})`}`);
+  if (report.mongoErrorMessage) {
+    console.error(`Driver Error Message:   ${report.mongoErrorMessage}`);
+    if (report.mongoErrorCode !== undefined) {
+      console.error(`Driver Error Code:      ${report.mongoErrorCode}`);
+    }
+  }
+  console.error('TLS Verification Mode:  Standard certificate verification strictly enforced.');
+  console.error('Security Scrubbing:     Credentials and tokens scrubbed from diagnostic logs.');
+  console.error('========================================================================');
+
+  return report;
+}
+
+/**
+ * Checks whether a background reconnect can be attempted (respecting 30s cooldown)
+ */
+export function canAttemptReconnect(): boolean {
+  if (isConnected || isConnecting) return false;
+  const uri = process.env.MONGODB_URI?.trim();
+  if (!uri || uri.includes('paste_your_copied_connection_string_here')) return false;
+  return Date.now() - lastAttemptTimestamp >= 30000;
+}
+
+/**
+ * Connects to MongoDB Atlas using a bounded retry strategy without duplicate pool leaks.
+ * Enforces standard TLS certificate verification and safe structured diagnostics.
+ */
+export async function connectToDatabase(options?: {
+  maxRetries?: number;
+  initialDelayMs?: number;
+}): Promise<{ connected: boolean; error?: string }> {
   if (isConnected && db) {
     return { connected: true };
   }
 
   if (isConnecting) {
     let attempts = 0;
-    while (isConnecting && attempts < 30) {
+    while (isConnecting && attempts < 40) {
       await new Promise(resolve => setTimeout(resolve, 200));
       attempts++;
     }
@@ -274,106 +545,165 @@ export async function connectToDatabase(): Promise<{ connected: boolean; error?:
   }
 
   isConnecting = true;
-  lastConnectionState = {
-    connected: false,
-    connecting: true,
-    hasMongoUri: true,
-    database: DATABASE_NAME,
-    clusterHost: uriConfig.clusterHost,
-    lastAttemptAt: new Date().toISOString()
-  };
+  lastAttemptTimestamp = Date.now();
 
-  try {
-    console.log(`[MongoDB] Connecting to database: ${DATABASE_NAME} (${sanitizeMongoUri(uri)})...`);
-    const isSrv = uri.startsWith('mongodb+srv://');
-    const clientOptions: any = {
-      serverSelectionTimeoutMS: 5000,
-      connectTimeoutMS: 10000,
-      maxPoolSize: 10,
-      minPoolSize: 0,
-      retryWrites: true,
-    };
-    if (isSrv) {
-      clientOptions.tls = true;
+  const maxRetries = options?.maxRetries ?? 3;
+  const initialDelayMs = options?.initialDelayMs ?? 1500;
+  let lastErr: any = null;
+
+  // Standard TLS options with standard CA certificate validation for Atlas clusters
+  const isSrv = uri.startsWith('mongodb+srv://') || uri.includes('tls=true') || uri.includes('ssl=true');
+  const clientOptions: any = {
+    serverSelectionTimeoutMS: 5000,
+    connectTimeoutMS: 10000,
+    maxPoolSize: 10,
+    minPoolSize: 0,
+    retryWrites: true,
+  };
+  if (isSrv) {
+    clientOptions.tls = true;
+  }
+
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    // 1. Safely dispose of any prior client instance to prevent duplicate clients/pools
+    if (client) {
+      try {
+        await client.close(true);
+      } catch {
+        // ignore
+      }
+      client = null;
+      db = null;
     }
 
-    client = new MongoClient(uri, clientOptions);
-
     try {
-      await client.connect();
-    } catch (firstErr: any) {
-      const errMsg = String(firstErr?.message || '');
-      if ((errMsg.includes('querySrv') || errMsg.includes('ENOTFOUND')) && process.platform === 'win32') {
-        console.warn('[MongoDB] Windows DNS lookup issue, retrying with public DNS resolvers (8.8.8.8, 1.1.1.1)...');
-        try {
-          dns.setServers(['8.8.8.8', '1.1.1.1', '8.8.4.4']);
-          client = new MongoClient(uri, clientOptions);
-          await client.connect();
-        } catch {
+      console.log(`[MongoDB] Connection attempt ${attempt}/${maxRetries} to database: ${DATABASE_NAME} (${sanitizeMongoUri(uri)})...`);
+      
+      client = new MongoClient(uri, clientOptions);
+
+      try {
+        await client.connect();
+      } catch (firstErr: any) {
+        const errMsg = String(firstErr?.message || '');
+        if ((errMsg.includes('querySrv') || errMsg.includes('ENOTFOUND')) && process.platform === 'win32') {
+          console.warn('[MongoDB] Windows DNS lookup issue, retrying with public DNS resolvers (8.8.8.8, 1.1.1.1)...');
+          try {
+            dns.setServers(['8.8.8.8', '1.1.1.1', '8.8.4.4']);
+            if (client) {
+              await client.close(true).catch(() => {});
+            }
+            client = new MongoClient(uri, clientOptions);
+            await client.connect();
+          } catch (dnsErr) {
+            throw firstErr;
+          }
+        } else {
           throw firstErr;
         }
-      } else {
-        throw firstErr;
+      }
+
+      db = client.db(DATABASE_NAME);
+
+      // Verify real connection with an actual ping command before declaring success
+      await db.command({ ping: 1 });
+
+      isConnected = true;
+      isConnecting = false;
+
+      lastConnectionState = {
+        connected: true,
+        connecting: false,
+        hasMongoUri: true,
+        database: DATABASE_NAME,
+        clusterHost: uriConfig.clusterHost,
+        lastAttemptAt: new Date().toISOString()
+      };
+
+      console.log(`[MongoDB] Successfully connected to database: ${DATABASE_NAME}`);
+
+      // Create indexes for performance and uniqueness
+      try {
+        const usersCol = db.collection<UserDocument>('users');
+        await usersCol.createIndex({ email: 1 }, { unique: true });
+        const tripsCol = db.collection<TripDocument>('trips');
+        await tripsCol.createIndex({ userId: 1, updatedAt: -1 });
+      } catch (err: any) {
+        console.warn('[MongoDB] Index creation notice:', err.message);
+      }
+
+      // Seed destinations collection if empty
+      try {
+        await seedDestinationsIfEmpty();
+      } catch (err: any) {
+        console.warn('[MongoDB] Destination seeding notice:', err.message);
+      }
+
+      return { connected: true };
+    } catch (err: any) {
+      lastErr = err;
+      console.warn(`[MongoDB] Connection attempt ${attempt}/${maxRetries} failed: ${err.message || err}`);
+
+      if (client) {
+        try {
+          await client.close(true);
+        } catch {
+          // ignore
+        }
+        client = null;
+        db = null;
+      }
+
+      if (attempt < maxRetries) {
+        const delay = initialDelayMs * attempt;
+        await new Promise(resolve => setTimeout(resolve, delay));
       }
     }
-
-    db = client.db(DATABASE_NAME);
-
-    // Verify real connection with an actual ping command before declaring success
-    await db.command({ ping: 1 });
-
-    isConnected = true;
-    isConnecting = false;
-
-    lastConnectionState = {
-      connected: true,
-      connecting: false,
-      hasMongoUri: true,
-      database: DATABASE_NAME,
-      clusterHost: uriConfig.clusterHost,
-      lastAttemptAt: new Date().toISOString()
-    };
-
-    console.log(`[MongoDB] Successfully connected to database: ${DATABASE_NAME}`);
-
-    // Create indexes for performance and uniqueness
-    try {
-      const usersCol = db.collection<UserDocument>('users');
-      await usersCol.createIndex({ email: 1 }, { unique: true });
-      const tripsCol = db.collection<TripDocument>('trips');
-      await tripsCol.createIndex({ userId: 1, updatedAt: -1 });
-    } catch (err: any) {
-      console.warn('[MongoDB] Index creation notice:', err.message);
-    }
-
-    // Seed destinations collection if empty
-    try {
-      await seedDestinationsIfEmpty();
-    } catch (err: any) {
-      console.warn('[MongoDB] Destination seeding notice:', err.message);
-    }
-
-    return { connected: true };
-  } catch (err: any) {
-    isConnecting = false;
-    isConnected = false;
-    db = null;
-
-    const diagnosis = diagnoseMongoError(err);
-    lastConnectionState = {
-      connected: false,
-      connecting: false,
-      hasMongoUri: true,
-      database: DATABASE_NAME,
-      reason: diagnosis.reason,
-      error: diagnosis.message,
-      clusterHost: uriConfig.clusterHost,
-      lastAttemptAt: new Date().toISOString()
-    };
-
-    console.error(`[MongoDB] Connection failed (${diagnosis.reason}): ${diagnosis.message}`);
-    return { connected: false, error: diagnosis.message };
   }
+
+  // All retries failed
+  isConnecting = false;
+  isConnected = false;
+  db = null;
+  if (client) {
+    try {
+      await client.close(true);
+    } catch {
+      // ignore
+    }
+    client = null;
+  }
+
+  const diagnosis = diagnoseMongoError(lastErr);
+
+  // Run comprehensive network diagnostics and print structured report to Render logs
+  if (isSrv || (uriConfig.clusterHost && uriConfig.clusterHost.includes('mongodb.net'))) {
+    try {
+      lastDiagnostics = await runAtlasDiagnostics(uriConfig.clusterHost || 'nammayatra.ohoklph.mongodb.net', lastErr, maxRetries);
+    } catch (diagErr: any) {
+      console.error('[MongoDB Diagnostics] Error running probe:', diagErr.message);
+    }
+  }
+
+  lastConnectionState = {
+    connected: false,
+    connecting: false,
+    hasMongoUri: true,
+    database: DATABASE_NAME,
+    reason: diagnosis.reason,
+    error: diagnosis.message,
+    clusterHost: uriConfig.clusterHost,
+    lastAttemptAt: new Date().toISOString(),
+    diagnosticsSummary: lastDiagnostics ? {
+      driverVersion: lastDiagnostics.driverVersion,
+      nodeVersion: lastDiagnostics.nodeVersion,
+      dnsSrvSuccess: lastDiagnostics.dnsSrvSuccess,
+      tcpSuccess: lastDiagnostics.tcpSuccess,
+      tlsProbeSuccess: lastDiagnostics.tlsProbeSuccess,
+      outboundIp: lastDiagnostics.outboundIp
+    } : undefined
+  };
+
+  return { connected: false, error: diagnosis.message };
 }
 
 /**

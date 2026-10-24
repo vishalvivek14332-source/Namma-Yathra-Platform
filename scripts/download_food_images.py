@@ -15,7 +15,7 @@ food_mappings = {
     'food_udupi_meal.jpg': "File:Udupi's veg meal.jpg"
 }
 
-output_dir = os.path.join(os.getcwd(), 'public', 'images')
+output_dir = os.path.join(os.path.dirname(__file__), '..', 'public', 'images')
 
 for filename, wiki_title in food_mappings.items():
     api_url = f"https://commons.wikimedia.org/w/api.php?action=query&titles={urllib.parse.quote(wiki_title)}&prop=imageinfo&iiprop=url|size&format=json"

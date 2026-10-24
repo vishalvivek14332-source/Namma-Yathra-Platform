@@ -11,10 +11,10 @@ import {
   getDestinationsCollection,
   closeDatabase,
   DATABASE_NAME
-} from './src/server/db';
-import { tripRouter } from './src/server/tripRoutes';
-import { authRouter } from './src/server/authRoutes';
-import { KARNATAKA_DESTINATIONS, ALL_CURATED_DESTINATIONS } from './src/data/destinations';
+} from '../src/server/db';
+import { tripRouter } from '../src/server/tripRoutes';
+import { authRouter } from '../src/server/authRoutes';
+import { KARNATAKA_DESTINATIONS, ALL_CURATED_DESTINATIONS } from '../src/data/destinations';
 
 async function runTests() {
   console.log('================================================================');

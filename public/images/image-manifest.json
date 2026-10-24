@@ -178,13 +178,13 @@
   {
     "destinationId": "rajas-seat-madikeri",
     "localImagePath": "/images/rajas_seat.jpg",
-    "originalSourcePage": "https://commons.wikimedia.org/wiki/File:Raja%27s_Seat_(Madikeri)_(16).jpg",
-    "creator": "Vinayaraj",
-    "license": "CC BY-SA 4.0",
-    "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0/",
+    "originalSourcePage": "https://commons.wikimedia.org/wiki/File:Raja%27s_Seat,_Madikeri.jpg",
+    "creator": "Devaiahpa",
+    "license": "CC BY-SA 3.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by-sa/3.0/",
     "verificationStatus": "verified_authentic",
-    "attributionText": "Photo by Vinayaraj (CC BY-SA 4.0) via Wikimedia Commons",
-    "dimensions": "273x205"
+    "attributionText": "Photo by Devaiahpa (CC BY-SA 3.0) via Wikimedia Commons",
+    "dimensions": "1024x681"
   },
   {
     "destinationId": "abbey-falls-coorg",

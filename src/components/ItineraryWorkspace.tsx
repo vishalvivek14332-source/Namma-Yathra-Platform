@@ -203,6 +203,7 @@ export const ItineraryWorkspace: React.FC<ItineraryWorkspaceProps> = ({
                           <SafeImage
                             src={dest.imageUrl}
                             alt={dest.name}
+                            objectPosition={dest.objectPosition}
                           />
                           <div className="absolute top-1.5 left-1.5 w-6 h-6 rounded-full bg-[#173D2E] text-[#FFFEFA] flex items-center justify-center font-bold font-mono-numbers text-xs shadow z-10">
                             {sIdx + 1}

@@ -168,6 +168,7 @@ export const SelectedPlacesPanel: React.FC<SelectedPlacesPanelProps> = ({
                           <SafeImage
                             src={place.imageUrl}
                             alt={place.name}
+                            objectPosition={place.objectPosition}
                             className="w-full h-full object-cover"
                           />
                         </div>

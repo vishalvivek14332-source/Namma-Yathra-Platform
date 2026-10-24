@@ -193,54 +193,14 @@ export const TripPlannerForm: React.FC<TripPlannerFormProps> = ({
   ];
 
   const loadingMessages = [
-    'Consulting 32 certified Karnataka destination records...',
-    'Synthesizing geographic clusters and road transits...',
-    'Balancing visit schedules with sunrise/sunset timing...',
-    'Finalizing deterministic lodging and fare math...'
+    'Planning your Karnataka journey...',
+    'Consulting 39 certified Karnataka destination records...',
+    'Synthesizing optimal daily stops & road transits...',
+    'Calculating realistic Karnataka budget breakdown...'
   ];
 
   return (
     <div id="planner-form" className="bg-[#FFFEFA] rounded-2xl border border-[#D5CEBF] p-6 sm:p-8 md:p-10 shadow-lg relative overflow-hidden">
-      
-      {/* Top Banner Row matching Reference Image */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-center mb-8 border-b border-[#E5DFD3] pb-8">
-        {/* Left Editorial Header */}
-        <div className="lg:col-span-7 space-y-2">
-          <div className="text-[11px] font-bold uppercase tracking-widest text-[#B9684B]">
-            INTELLIGENT TRIP SYNTHESIZER
-          </div>
-          <h3 className="font-editorial text-3xl sm:text-4xl text-[#102D23] font-bold tracking-tight">
-            Plan Your Karnataka Journey
-          </h3>
-          <p className="text-sm text-[#555850] max-w-xl font-normal leading-relaxed">
-            Tell us your preferences and let AI create a personalized itinerary.
-          </p>
-        </div>
-
-        {/* Right Atmospheric Coastal Graphic matching Reference */}
-        <div className="lg:col-span-5 relative rounded-2xl overflow-hidden aspect-[16/7] border border-[#D5CEBF] bg-[#EDE8DE] shadow-xs">
-          <img
-            src="/images/gokarna.jpg"
-            alt="Karnataka Coastline"
-            className="w-full h-full object-cover"
-          />
-          <div className="absolute inset-0 bg-gradient-to-l from-black/60 via-black/20 to-transparent" />
-          
-          <div className="absolute top-3 right-4 text-right pointer-events-none select-none">
-            <span className="font-editorial italic text-base sm:text-lg font-bold text-[#FFFEFA] drop-shadow-sm block leading-tight">
-              From misty hills
-            </span>
-            <span className="font-editorial italic text-base sm:text-lg font-bold text-[#D8A735] drop-shadow-sm block leading-tight">
-              to golden shores
-            </span>
-          </div>
-
-          <div className="absolute bottom-3 right-4 bg-[#FFFEFA]/95 backdrop-blur-md px-3 py-1 rounded-full border border-white/40 text-[10px] font-semibold text-[#102D23] flex items-center gap-1.5 shadow-sm">
-            <MapPin className="w-3 h-3 text-[#B9684B]" />
-            <span>Your Journey Awaits</span>
-          </div>
-        </div>
-      </div>
 
       {/* Selected Places from Exploration Banner */}
       {initialValues?.selectedPlaces && initialValues.selectedPlaces.length > 0 && (
@@ -516,7 +476,7 @@ export const TripPlannerForm: React.FC<TripPlannerFormProps> = ({
         {/* ============================================================ */}
         <div className="pt-4 flex flex-col sm:flex-row items-center justify-between gap-4 border-t border-[#E5DFD3]">
           <div className="text-xs text-[#77786F]">
-            Powered by Gemini 3.8 and verified Karnataka Tourism coordinates.
+            Powered by Gemini Flash and verified Karnataka Tourism coordinates.
           </div>
 
           <button
@@ -525,7 +485,7 @@ export const TripPlannerForm: React.FC<TripPlannerFormProps> = ({
             className="w-full sm:w-auto px-8 py-3.5 bg-[#173D2E] hover:bg-[#102D23] disabled:opacity-50 text-[#FFFEFA] font-semibold text-xs sm:text-sm rounded-xl shadow-sm hover:shadow-md transition-all duration-200 flex items-center justify-center gap-2.5 cursor-pointer active:scale-98"
           >
             <Sparkles className="w-4 h-4 text-[#D8A735]" />
-            <span>{isLoading ? 'Synthesizing Itinerary with Gemini...' : 'Plan My Journey'}</span>
+            <span>{isLoading ? 'Planning your Karnataka journey...' : 'Plan My Journey'}</span>
             <ArrowRight className="w-4 h-4 text-[#D8A735]" />
           </button>
         </div>

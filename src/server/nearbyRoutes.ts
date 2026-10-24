@@ -366,6 +366,7 @@ nearbyRouter.get('/nearby', async (req: Request, res: Response) => {
             speciality: dest.speciality,
             shortDescription: dest.shortDescription,
             imageUrl: dest.imageUrl,
+            objectPosition: dest.objectPosition,
             isVerified: true,
             verifiedBadge: dest.destinationType === 'food_experience' ? 'Verified Karnataka Culinary Experience' : 'Verified ASI / KSTDC',
             avgEntryFeeINR: dest.avgEntryFeeINR,

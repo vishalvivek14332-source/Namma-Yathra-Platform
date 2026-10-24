@@ -8,7 +8,7 @@
 
 ## 1. Executive Summary & Problem Statement
 
-Karnataka is one of India's most geographically and culturally diverse states—boasting UNESCO World Heritage monuments (Hampi, Pattadakal, Hoysala temples of Belur & Halebidu), Western Ghats biodiversity hotspots (Coorg, Chikkamagaluru, Kudremukh, Agumbe), 320km of Arabian Sea coastline (Gokarna, Udupi, Murudeshwar), and royal heritage capitals (Mysuru, Srirangapatna).
+Karnataka is one of India's most geographically and culturally diverse states—boasting UNESCO World Heritage monuments (Hampi, Pattadakal, Hoysala temples of Belur & Halebidu), Western Ghats biodiversity hotspots (Coorg, Chikkamagaluru, Kudremukh, Agumbe), 320km of Arabian Sea coastline (Gokarna, Udupi, Murudeshwar), royal heritage capitals (Mysuru, Srirangapatna), and world-famous culinary traditions (Mysore Masala Dosa, Udupi Brahmin meals, Mangalurean Neer Dosa, Dharwad Peda, and North Karnataka Jolada Rotti).
 
 However, planning a trip across Karnataka presents major challenges:
 - **Hallucinated or impossible itineraries:** Generic LLMs often suggest driving 600km between Hampi and Coorg in a single afternoon.
@@ -17,7 +17,7 @@ However, planning a trip across Karnataka presents major challenges:
 - **Fixed origins:** Most tools rigidly assume trips begin in Bengaluru.
 - **No private, synchronized storage:** Travellers lose their custom itineraries when switching devices or clearing browser cache.
 
-**Namma Yatra** solves this with an intelligent full-stack architecture combining **Google Gemini 3.8 Flash** with a **curated 32-node Karnataka destination knowledge base**, interactive OpenStreetMap maps, **deterministic client-side budget arithmetic**, and **secure MongoDB Atlas cloud persistence** with per-user authentication.
+**Namma Yatra** solves this with an intelligent full-stack architecture combining **Google Gemini Flash** with a **curated 39-node Karnataka destination knowledge base** (32 heritage/scenic landmarks + 7 regional culinary heritage circuits), interactive OpenStreetMap maps, **deterministic client-side budget arithmetic**, and **secure MongoDB Atlas cloud persistence** with per-user authentication.
 
 ---
 
@@ -27,8 +27,8 @@ However, planning a trip across Karnataka presents major challenges:
 - **Secure Authentication & Cloud Synchronization:** User registration, password hashing (`bcryptjs`), and HTTP-only session cookies (`jsonwebtoken`) guaranteeing per-user trip privacy.
 - **Public Exploration & Gated Saving:** Guests can freely explore the Karnataka Atlas and generate AI itineraries; saving to cloud or managing saved journeys is gated by authentication with seamless auto-save after sign in.
 - **Multi-Origin Flexibility:** Support for travellers originating from Bengaluru, Mysuru, Hubballi-Dharwad, Mangaluru, Belagavi, Kalaburagi, Shivamogga, or custom border hubs.
-- **Verified Destination Knowledge Base:** 32 verified destinations with exact GPS coordinates (ASI and Karnataka Tourism certified), visit durations, ticket fees, local specialties, and planning constraints.
-- **Interactive OpenStreetMap Integration:** Visual Leaflet map centered on active daily itinerary stops, custom numbered pins, coordinate centering, and full-screen view.
+- **Verified Destination Knowledge Base:** 39 verified destinations (32 scenic & cultural monuments + 7 regional culinary heritage circuits) with exact GPS coordinates (ASI and Karnataka Tourism certified), visit durations, ticket fees, local specialties, and planning constraints.
+- **Interactive OpenStreetMap Integration:** Visual Leaflet map centered on active daily itinerary stops, custom numbered pins, coordinate centering, radius filtering, and full-screen view.
 - **Single-Day Regeneration:** Refresh or alter Day 2 or Day 3 without discarding the rest of your trip.
 - **Deterministic Budget Arithmetic:** Separation of AI generation from financial arithmetic; automatic re-calculation upon changing group sizes, room counts, or stop adjustments.
 - **Interactive Stop Reordering & Deletion:** Move stops earlier/later or remove them with real-time budget updates.
@@ -43,7 +43,7 @@ However, planning a trip across Karnataka presents major challenges:
 - **Mapping:** Leaflet & OpenStreetMap (with zero paid API dependencies)
 - **Database & Persistence:** MongoDB Atlas (official Node.js driver), In-Memory Mongo for testing
 - **Authentication:** `bcryptjs` for salted password hashing (rounds: 10), `jsonwebtoken` for signed 7-day HTTP-only cookies, `cookie-parser`
-- **AI & Server:** Node.js, Express, `@google/genai` SDK (Gemini 3.8 Flash)
+- **AI & Server:** Node.js, Express, `@google/genai` SDK (`gemini-3.5-flash-lite` primary with resilient fallback chain and exponential backoff retry)
 - **Full-Stack Runtime:** tsx server with embedded Vite middlewares
 - **Data Validation:** Strict JSON response schemas, destination coordinate verification, rate limiting, and cross-user isolation
 
@@ -85,29 +85,39 @@ However, planning a trip across Karnataka presents major challenges:
 |                                |                                        |
 |                                v                                        |
 |   +-------------------------------------------------------+             |
-|   | Gemini 3.8 Flash Proxy & Curated Karnataka Database   |-------------+
-|   | (32 ASI & KSTDC Verified Destinations & GPS Anchors)  |             |
+|   | Gemini Flash AI Proxy & Curated Karnataka Database    |-------------+
+|   | (39 ASI, KSTDC & GI-Tagged Certified Destinations)    |             |
 |   +-------------------------------------------------------+             |
 +-------------------------------------------------------------------------+
 ```
 
 ---
 
-## 5. Curated Karnataka Regions Covered
+## 5. Curated Karnataka Regions & Culinary Circuits
 
+### Scenic, Cultural & Heritage Landmarks (32 Sites)
 1. **Bengaluru & South:** Bengaluru Palace, Lalbagh Glass House, Tipu Sultan's Summer Palace
 2. **Mysuru & Cauvery Belt:** Mysuru Palace (Amba Vilas), Srirangapatna Fortress, Chamundi Hill, Somanathapura Keshava Temple
 3. **Central & Hoysala Heritage:** Belur Chennakeshava Temple, Halebidu Hoysaleswara Temple, Shravanabelagola Gommateshwara
-4. **Northern UNESCO Heritage:** Hampi Vijaya Vittala & Stone Chariot, Virupaksha Temple, Matanga Hill, Badami Cave Temples, Pattadakal, Aihole
-5. **Western Ghats & Coffee Country:** Raja's Seat Madikeri, Abbey Falls, Talacauvery, Dubare Elephant Camp, Mullayanagiri Peak, Baba Budangiri, Kudremukh
-6. **Coastal Karavali:** Gokarna Om Beach, Murudeshwar Shiva, Udupi Sri Krishna Matha, St. Mary's Basalt Island, Dandeli Rafting
+4. **Northern UNESCO Heritage:** Hampi Vijaya Vittala & Stone Chariot, Virupaksha Temple, Matanga Hill, Badami Cave Temples, Pattadakal, Aihole, Gol Gumbaz Vijayapura, Bidar Fort
+5. **Western Ghats & Coffee Country:** Raja's Seat & Madikeri Fort, Abbey Falls, Talacauvery, Dubare Elephant Camp, Mullayanagiri Peak, Baba Budangiri, Kudremukh National Park, Agumbe Rainforest
+6. **Coastal Karavali:** Gokarna Om Beach, Murudeshwar Shiva Temple, Udupi Sri Krishna Matha, St. Mary's Basalt Island, Dandeli Wildlife & River Kali Rafting
+
+### Iconic Regional Culinary Heritage Circuits (7 Experiences)
+1. **Mysuru Masala Dosa & Mysore Pak Heritage:** Iconic wood-fired red garlic chutney crispy dosas and melt-in-mouth ghee Mysore Pak from royal heritage sweetmakers.
+2. **Udupi Satvik Vegetarian Culinary Experience:** Authentic temple cuisine served on plantain leaves with rasam, sambar, and jackfruit payasa.
+3. **Mangaluru Coastal Seafood & Tuluva Heritage:** Neer dosa paired with Kundapura chicken curry and freshest coastal seafood.
+4. **Dharwad Peda & Mishrikoti Heritage Sweets:** GI-tagged caramelized Dharwad peda made from condensed Dharwadi buffalo milk.
+5. **North Karnataka Jolada Rotti Oota:** Warm sorghum flatbreads served with stuffed brinjal (enne gai), shenga chutney, and fresh curd.
+6. **Kodava (Coorg) Highland Cuisine:** Akki rotti, steamed kadambuttu rice dumplings, and wild hill spices from the Western Ghats.
+7. **Bengaluru Darshini & Filter Coffee Culture:** Fluffy thatte idlis, golden vadas, and frothed chicory filter kaapi in brass davarahs.
 
 ---
 
 ## 6. Installation & Local Development
 
 ### Prerequisites
-- Node.js 20+
+- Node.js 20+ (Node 22 recommended)
 - npm 10+
 
 ### Setup
@@ -127,8 +137,10 @@ cp .env.example .env
 # JWT_SECRET="your_strong_jwt_secret"
 # PORT=3000
 
-# 4. Run Automated MongoDB & Auth Integration Tests
-npm run test:db
+# 4. Run Automated QA & Test Suites
+npm run test:qa    # 386 frontend, mapping & data tests
+npm run test:db    # 16 MongoDB Atlas & Auth integration tests
+npm run test:ai    # 17 Gemini AI resilience and latency benchmark tests
 
 # 5. Type Check
 npm run lint
@@ -186,8 +198,8 @@ Namma Yatra connects to **MongoDB Atlas** using the official MongoDB Node.js dri
    - `createdAt` / `updatedAt`: ISO Timestamps
 
 3. **`destinations` Collection**:
-   - 32 verified Karnataka destinations with exact GPS coordinates, entry fees, and descriptions.
-   - Automatically seeded on startup if empty.
+   - 39 verified Karnataka destinations & culinary circuits with exact GPS coordinates, entry fees, and descriptions.
+   - Automatically seeded and updated on startup.
 
 ### REST API Endpoints
 
@@ -214,31 +226,35 @@ Namma Yatra connects to **MongoDB Atlas** using the official MongoDB Node.js dri
 | Method | Route | Description | Auth Required | Status Codes |
 |---|---|---|---|---|
 | `GET` | `/api/db/status` | Connection health, database name, and stats | No | `200 OK` (credential-free) |
-| `GET` | `/api/destinations` | Synced Karnataka destination records | No | `200 OK` |
-| `POST` | `/api/plan-trip` | Generates full AI itinerary using Gemini | No (Guest allowed) | `200 OK`, `400 Bad Request` |
+| `GET` | `/api/destinations` | Synced Karnataka destination records (39 records) | No | `200 OK` |
+| `POST` | `/api/plan-trip` | Generates full AI itinerary using Gemini Flash | No (Guest allowed) | `200 OK`, `400 Bad Request` |
 | `POST` | `/api/regenerate-day` | Refreshes single day itinerary | No (Guest allowed) | `200 OK`, `400 Bad Request` |
 
 ---
 
 ## 8. Verification & Testing
 
-The application, authentication layer, and database integration are verified with an automated 16-test integration suite (`npm run test:db`):
-1. **In-Memory Simulated MongoDB:** Auto-starts an isolated in-memory MongoDB Atlas simulation.
-2. **Database Reusable Connection:** Verifies connection lifecycle and database name (`YatraAI`).
-3. **Destination Seeding:** Confirms 32 verified destinations with coordinates are present.
-4. **User Registration:** Tests `POST /api/auth/register` with input validation and HTTP-only session cookie issuance.
-5. **Duplicate Registration Prevention:** Verifies unique index on email returns `409 Conflict`.
-6. **Multi-User Creation:** Registers User 2 (`Priya Rao`) with independent session cookie.
-7. **Session Verification:** Verifies `GET /api/auth/me` with session cookie.
-8. **Unauthenticated Route Protection:** Confirms unauthenticated access to `/api/trips` returns `401 Unauthorized`.
-9. **User Trip Creation:** Verifies `POST /api/trips` persists trip linked to `userId`.
-10. **User Trip Retrieval:** Verifies `GET /api/trips` lists only the current user's trips.
-11. **Strict Cross-User Isolation:** Verifies User 2 cannot list, read, modify (PUT), or delete User 1's trips (returns `404 Not Found`).
-12. **User Trip Update:** Confirms `PUT /api/trips/:id` updates title and notes.
-13. **Password Recovery Flow:** Tests `POST /api/auth/forgot-password` token generation, `POST /api/auth/reset-password`, invalidation of old password, and successful login with new password.
-14. **User Trip Deletion:** Verifies `DELETE /api/trips/:id` permanently removes the trip.
-15. **User Logout:** Verifies `POST /api/auth/logout` clears the session cookie.
-16. **Credential Sanitization:** Confirms zero secrets, connection strings, or password hashes are exposed in API responses.
+The application, authentication layer, AI engine, and database integration are thoroughly tested with three dedicated automated suites:
+
+1. **QA Verification Suite (`npm run test:qa`)**:
+   - **386 Automated Tests** validating all 39 destination schemas, authentic image links, CC/Wikimedia attribution metadata, category filtering, live GPS reverse-geocoding, stop hydration, and interactive map behaviors.
+2. **MongoDB Atlas & Auth Suite (`npm run test:db`)**:
+   - **16 Integration Tests** running against an isolated in-memory MongoDB Atlas environment:
+     - Reusable connection lifecycle and database verification (`YatraAI`).
+     - Automatic destination synchronization (39 records).
+     - User registration, duplicate email rejection (`409 Conflict`), and HTTP-only JWT cookies.
+     - Strict per-user data isolation across `GET`, `LIST`, `PUT`, and `DELETE`.
+     - Password recovery and token invalidation lifecycle.
+     - Credential sanitization (zero secrets or password hashes in API responses).
+3. **Gemini AI Resilience Suite (`npm run test:ai`)**:
+   - **17 Resilience Tests** benchmarking:
+     - `gemini-3.5-flash-lite` latency and structured JSON output.
+     - Strict JSON itinerary schema compliance.
+     - Transient HTTP error classification (429, 500, 502, 503, 504, connection timeouts) with retry capability.
+     - Permanent client error non-retry compliance (400, 401, 404).
+     - Deterministic offline fallback engine integrity.
+4. **Type Check (`npm run lint`)**:
+   - Strict TypeScript compilation (`tsc --noEmit`).
 
 ---
 
@@ -248,14 +264,15 @@ The application, authentication layer, and database integration are verified wit
 
 ### Deploying to Render Web Services
 
-Namma Yatra is pre-configured with a Render Blueprint [`render.yaml`](file:///c:/Users/visha/OneDrive/Documents/Kannada/yatraai---karnataka-travel-planner/render.yaml) for automated zero-downtime deployment.
+Namma Yatra is pre-configured with a Render Blueprint [`render.yaml`](render.yaml) for automated zero-downtime deployment.
 
 #### Manual Service Configuration in Render Dashboard:
-If you configure the Web Service manually via dashboard instead of the Blueprint:
+If configuring the Web Service manually via dashboard instead of the Blueprint:
 1. **Environment:** Node
-2. **Build Command:** `npm install && npm run build` (or `npm run render-build`)
-3. **Start Command:** `npm start`
-4. **Environment Variables:**
+2. **Node Version:** `22.x` (or `20.x` minimum)
+3. **Build Command:** `npm install && npm run build` (or `npm run render-build`)
+4. **Start Command:** `npm start`
+5. **Environment Variables:**
    - `NODE_ENV`: `production`
    - `MONGODB_URI`: `mongodb+srv://<username>:<password>@<cluster>.mongodb.net/<database>?retryWrites=true&w=majority`
    - `MONGODB_DB_NAME`: `YatraAI`
@@ -265,21 +282,21 @@ If you configure the Web Service manually via dashboard instead of the Blueprint
 ### Troubleshooting Common Deployment Errors
 
 #### 1. Missing Frontend Build (`ENOENT: stat '.../dist/index.html'`)
-- **Root Cause:** Render's default build command is `npm install`, which does not run `vite build`.
-- **Permanent Fix:** Set Render's **Build Command** to `npm install && npm run build`. The server also includes a fail-fast startup check that immediately logs exact setup instructions if the production build is missing.
+- **Root Cause:** Render's default build command is `npm install`, which does not compile the Vite frontend bundle.
+- **Permanent Fix:** Set Render's **Build Command** to `npm install && npm run build`. The server includes a fail-fast startup check that immediately logs clear instructions if the production build is missing.
 
 #### 2. MongoDB Atlas TLS Error (`SSL routines:ssl3_read_bytes:tlsv1 alert internal error`)
-- **Root Cause:** MongoDB Atlas rejects incoming TLS handshakes at its SNI proxy if the client IP is not on the Atlas IP Access List. Because Render's cloud servers use dynamic outbound IPs, connections will fail with `tlsv1 alert internal error` unless Atlas permits them.
+- **Root Cause:** MongoDB Atlas rejects incoming TLS handshakes if the client IP is not on the Atlas IP Access List. Because Render's cloud servers use dynamic outbound IPs, connections will fail unless Atlas permits them.
 - **Permanent Fix:**
   1. Open [MongoDB Atlas Dashboard](https://cloud.mongodb.com).
   2. In the left navigation, click **Network Access** (under **Security**).
   3. Click **Add IP Address**.
   4. Click **Allow Access from Anywhere** (`0.0.0.0/0`) and click **Confirm**.
   5. Wait 1–2 minutes for the rule to apply.
-  6. The backend driver uses Node 20+, `tls: true`, and verifies connection via `ping: 1`. When connected, `/api/db/status` will report `connected: true`.
+  6. When connected, `/api/db/status` will report `connected: true`.
 
 ---
 
 ## 10. License
 
-Apache-2.0 License. Data verified against ASI & KSTDC archives.
+Apache-2.0 License. Monument data and coordinates verified against ASI & KSTDC archives.

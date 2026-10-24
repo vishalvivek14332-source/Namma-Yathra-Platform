@@ -376,6 +376,7 @@ export const CuratedShowcase: React.FC<CuratedShowcaseProps> = ({
                 <SafeImage
                   src={card.imageUrl}
                   alt={card.name}
+                  objectPosition={destObj?.objectPosition}
                   className="w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-105"
                 />
 
@@ -532,9 +533,10 @@ export const CuratedShowcase: React.FC<CuratedShowcaseProps> = ({
                       }}
                       title={`Select ${destObj.name} on map`}
                     >
-                      <img
+                      <SafeImage
                         src={destObj.imageUrl}
                         alt={destObj.name}
+                        objectPosition={destObj.objectPosition}
                         className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
                       />
                       <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/30 to-transparent flex flex-col justify-between p-1.5 pointer-events-none">
@@ -599,11 +601,11 @@ export const CuratedShowcase: React.FC<CuratedShowcaseProps> = ({
                       >
                         <div className="flex items-start gap-2.5">
                           <div className="w-14 h-14 rounded-lg overflow-hidden bg-[#EDE8DE] shrink-0 border border-[#E5DFD3]">
-                            <img
+                            <SafeImage
                               src={dest.imageUrl}
                               alt={dest.name}
+                              objectPosition={dest.objectPosition}
                               className="w-full h-full object-cover"
-                              onError={(e) => { (e.target as HTMLElement).style.display = 'none'; }}
                             />
                           </div>
                           <div className="flex-1 min-w-0">
@@ -673,6 +675,7 @@ export const CuratedShowcase: React.FC<CuratedShowcaseProps> = ({
                 <SafeImage
                   src={selectedAtlasDest.imageUrl}
                   alt={selectedAtlasDest.name}
+                  objectPosition={selectedAtlasDest.objectPosition}
                   className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-103"
                 />
 
@@ -851,6 +854,7 @@ export const CuratedShowcase: React.FC<CuratedShowcaseProps> = ({
               <SafeImage
                 src={modalDestination.imageUrl}
                 alt={modalDestination.name}
+                objectPosition={modalDestination.objectPosition}
               />
               <div className="absolute inset-0 bg-gradient-to-t from-[#102D23]/90 via-[#102D23]/30 to-transparent pointer-events-none" />
               

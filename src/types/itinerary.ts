@@ -44,6 +44,7 @@ export interface NearbyAttraction {
   directionsUrl?: string;
   shortDescription: string;
   imageUrl?: string;
+  objectPosition?: string;
   isVerified: boolean;
   verifiedBadge: string;
   avgEntryFeeINR?: number;
@@ -68,6 +69,7 @@ export interface SelectedPlace {
   openingHours?: string;
   distanceKm?: number;
   imageUrl?: string;
+  objectPosition?: string;
   isVerified: boolean;
   avgEntryFeeINR?: number;
   recommendedDurationMinutes?: number;

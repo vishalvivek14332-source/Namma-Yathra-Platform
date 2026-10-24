@@ -28,6 +28,7 @@ export const CuratedExperiences: React.FC<CuratedExperiencesProps> = ({
       description: 'Temples, forts and stories from a glorious past.',
       imageUrl: '/images/pattadakal.jpg',
       fallbackSrc: '/images/hampi.jpg',
+      objectPosition: 'center 40%',
       icon: Landmark
     },
     {
@@ -37,7 +38,8 @@ export const CuratedExperiences: React.FC<CuratedExperiencesProps> = ({
       count: '7 destinations',
       description: 'Mist-covered hills, coffee estates and breathtaking viewpoints.',
       imageUrl: '/images/coorg.jpg',
-      fallbackSrc: '/images/chikmagalur.jpg',
+      fallbackSrc: '/images/chikkamagaluru.jpg',
+      objectPosition: 'center 35%',
       icon: Mountain
     },
     {
@@ -48,6 +50,7 @@ export const CuratedExperiences: React.FC<CuratedExperiencesProps> = ({
       description: 'Pristine beaches, coastal towns and serene island getaways.',
       imageUrl: '/images/gokarna.jpg',
       fallbackSrc: '/images/murudeshwar.jpg',
+      objectPosition: 'center 40%',
       icon: Waves
     },
     {
@@ -58,6 +61,7 @@ export const CuratedExperiences: React.FC<CuratedExperiencesProps> = ({
       description: 'Local flavours, vibrant traditions and unique cultural experiences.',
       imageUrl: '/images/exp_food_karnataka.jpg',
       fallbackSrc: '/images/food_bengaluru_darshini.jpg',
+      objectPosition: 'center center',
       icon: Utensils
     }
   ];
@@ -125,7 +129,8 @@ export const CuratedExperiences: React.FC<CuratedExperiencesProps> = ({
                   src={exp.imageUrl}
                   fallbackSrc={exp.fallbackSrc}
                   alt={exp.title}
-                  className="w-full h-full object-cover object-center transition-transform duration-700 ease-out group-hover:scale-105"
+                  objectPosition={exp.objectPosition}
+                  className="w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-105"
                 />
 
                 {/* Dark gradient overlay for text readability */}

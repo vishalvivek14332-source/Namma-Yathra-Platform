@@ -69,6 +69,26 @@ const CATEGORIES: { id: AttractionCategory | 'All'; label: string; icon: any }[]
 
 import { POPULAR_HUBS } from '../data/destinations';
 
+const getCategoryFallbackImage = (category?: string) => {
+  switch (category) {
+    case 'Food':
+      return '/images/food_bengaluru_darshini.jpg';
+    case 'Nature':
+    case 'Adventure':
+    case 'Waterfalls':
+    case 'Wildlife':
+      return '/images/coorg.jpg';
+    case 'Beaches':
+      return '/images/gokarna.jpg';
+    case 'Temples':
+    case 'Spiritual':
+      return '/images/chamundeshwari_temple.jpg';
+    case 'Heritage':
+    default:
+      return '/images/hampi.jpg';
+  }
+};
+
 export const NearbyExplorer: React.FC<NearbyExplorerProps> = ({
   startingLocation,
   onSelectStartingLocation,
@@ -1155,18 +1175,18 @@ export const NearbyExplorer: React.FC<NearbyExplorerProps> = ({
           {/* ATTRACTION CARDS LIST (45% width on desktop, 100% on tablet/mobile) */}
           <div className="flex flex-col gap-3 lg:h-[72vh] lg:min-h-[520px] lg:max-h-[760px] w-full min-w-0">
             {/* Header with counter */}
-            <div className="flex items-center justify-between text-xs text-[#77786F] px-1 shrink-0">
-              <div>
-                Showing <strong className="text-[#102D23] font-bold">{filteredAttractions.length}</strong>{' '}
+            <div className="flex items-center justify-between text-xs sm:text-sm text-black font-bold px-1 shrink-0">
+              <div className="text-black font-bold">
+                Showing <strong className="text-black font-black">{filteredAttractions.length}</strong>{' '}
                 {selectedCategory === 'Food' ? 'culinary experiences & food venues' : 'destinations'}{' '}
                 {isAllKarnataka ? (
-                  <span>across <strong className="text-[#102D23]">All Karnataka</strong></span>
+                  <span>across <strong className="text-black font-black">All Karnataka</strong></span>
                 ) : (
-                  <span>within <strong className="text-[#102D23]">{radiusKm} km</strong> of <strong>{startingLocation?.name || 'Selected Point'}</strong></span>
+                  <span>within <strong className="text-black font-black">{radiusKm} km</strong> of <strong className="text-black font-black">{startingLocation?.name || 'Selected Point'}</strong></span>
                 )}
               </div>
               {!isAllKarnataka && (
-                <span className="text-[11px] text-[#B9684B] font-semibold shrink-0">
+                <span className="text-[11px] text-[#8C3B1F] font-bold shrink-0">
                   Straight-line distance
                 </span>
               )}
@@ -1232,7 +1252,7 @@ export const NearbyExplorer: React.FC<NearbyExplorerProps> = ({
                     const isCardHighlighted = selectedAttractionId === attraction.id;
                     const isFood = attraction.category === 'Food';
                     const directionsUrl = `https://www.google.com/maps/dir/?api=1&destination=${attraction.lat},${attraction.lng}`;
-                    const cardImage = attraction.imageUrl || (isFood ? '/images/food_bengaluru_darshini.jpg' : '/images/bengaluru.jpg');
+                    const cardImage = attraction.imageUrl || getCategoryFallbackImage(attraction.category);
 
                     return (
                       <div
@@ -1251,8 +1271,9 @@ export const NearbyExplorer: React.FC<NearbyExplorerProps> = ({
                         <div className="relative w-full aspect-[16/9] bg-[#EDE8DE] overflow-hidden shrink-0">
                           <SafeImage
                             src={cardImage}
-                            fallbackSrc={isFood ? '/images/food_bengaluru_darshini.jpg' : '/images/bengaluru.jpg'}
+                            fallbackSrc={getCategoryFallbackImage(attraction.category)}
                             alt={attraction.name}
+                            objectPosition={attraction.objectPosition}
                             className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
                           />
 
@@ -1398,18 +1419,18 @@ export const NearbyExplorer: React.FC<NearbyExplorerProps> = ({
         /* FULL LIST VIEW: No map, 3-column cards grid */
         <div className="space-y-4">
           {/* Header with counter */}
-          <div className="flex items-center justify-between text-xs text-[#77786F] px-1">
-            <div>
-              Showing <strong className="text-[#102D23] font-bold">{filteredAttractions.length}</strong>{' '}
+          <div className="flex items-center justify-between text-xs sm:text-sm text-black font-bold px-1">
+            <div className="text-black font-bold">
+              Showing <strong className="text-black font-black">{filteredAttractions.length}</strong>{' '}
               {selectedCategory === 'Food' ? 'culinary experiences & food venues' : 'destinations'}{' '}
               {isAllKarnataka ? (
-                <span>across <strong className="text-[#102D23]">All Karnataka</strong></span>
+                <span>across <strong className="text-black font-black">All Karnataka</strong></span>
               ) : (
-                <span>within <strong className="text-[#102D23]">{radiusKm} km</strong> of <strong>{startingLocation?.name || 'Selected Point'}</strong></span>
+                <span>within <strong className="text-black font-black">{radiusKm} km</strong> of <strong className="text-black font-black">{startingLocation?.name || 'Selected Point'}</strong></span>
               )}
             </div>
             {!isAllKarnataka && (
-              <span className="text-[11px] text-[#B9684B] font-semibold shrink-0">
+              <span className="text-[11px] text-[#8C3B1F] font-bold shrink-0">
                 Straight-line distance
               </span>
             )}
@@ -1473,7 +1494,7 @@ export const NearbyExplorer: React.FC<NearbyExplorerProps> = ({
                 const isCardHighlighted = selectedAttractionId === attraction.id;
                 const isFood = attraction.category === 'Food';
                 const directionsUrl = `https://www.google.com/maps/dir/?api=1&destination=${attraction.lat},${attraction.lng}`;
-                const cardImage = attraction.imageUrl || (isFood ? '/images/food_bengaluru_darshini.jpg' : '/images/bengaluru.jpg');
+                const cardImage = attraction.imageUrl || getCategoryFallbackImage(attraction.category);
 
                 return (
                   <div
@@ -1492,8 +1513,9 @@ export const NearbyExplorer: React.FC<NearbyExplorerProps> = ({
                     <div className="relative w-full aspect-[16/9] bg-[#EDE8DE] overflow-hidden shrink-0">
                       <SafeImage
                         src={cardImage}
-                        fallbackSrc={isFood ? '/images/food_bengaluru_darshini.jpg' : '/images/bengaluru.jpg'}
+                        fallbackSrc={getCategoryFallbackImage(attraction.category)}
                         alt={attraction.name}
+                        objectPosition={attraction.objectPosition}
                         className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
                       />
 

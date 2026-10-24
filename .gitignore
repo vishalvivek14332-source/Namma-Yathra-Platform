@@ -3,7 +3,21 @@ build/
 dist/
 coverage/
 .DS_Store
+Thumbs.db
 *.log
+*.tmp
 .env*
 !.env.example
 .aistudio/
+
+# Media and screen recordings
+*.mp4
+*.mov
+*.webm
+*.avi
+*.mkv
+
+# Local test scratch & IDE artifacts
+scratch/
+.system_generated/
+

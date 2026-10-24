@@ -5,6 +5,7 @@ interface SafeImageProps extends React.ImgHTMLAttributes<HTMLImageElement> {
   fallbackSrc?: string;
   alt: string;
   containerClassName?: string;
+  objectPosition?: string;
 }
 
 export const SafeImage: React.FC<SafeImageProps> = ({
@@ -13,6 +14,8 @@ export const SafeImage: React.FC<SafeImageProps> = ({
   alt,
   className = '',
   containerClassName = '',
+  objectPosition,
+  style,
   ...props
 }) => {
   const [loaded, setLoaded] = useState(false);
@@ -57,6 +60,10 @@ export const SafeImage: React.FC<SafeImageProps> = ({
           alt={alt}
           onLoad={() => setLoaded(true)}
           onError={handleError}
+          style={{
+            objectPosition: objectPosition || style?.objectPosition,
+            ...style
+          }}
           className={`w-full h-full object-cover transition-all duration-500 ease-out ${
             loaded ? 'opacity-100 scale-100' : 'opacity-0 scale-102'
           } ${className}`}

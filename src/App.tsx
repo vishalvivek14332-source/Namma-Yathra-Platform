@@ -94,7 +94,7 @@ function hydrateStop(stop: any): any {
         avgEntryFeeINR: stop.customAttraction.avgEntryFeeINR || stop.estimatedCostINR || 0,
         bestTimeToVisit: 'Daytime',
         accentColor: '#173D2E',
-        imageUrl: stop.customAttraction.imageUrl || (stop.customAttraction.category === 'Food' ? '/images/food_bengaluru_darshini.jpg' : '/images/bengaluru.jpg')
+        imageUrl: stop.customAttraction.imageUrl || getItineraryCategoryFallback(stop.customAttraction.category, stop.reason)
       }
     };
   }
@@ -113,9 +113,26 @@ function hydrateStop(stop: any): any {
       avgEntryFeeINR: stop.estimatedCostINR || 0,
       bestTimeToVisit: 'Daytime',
       accentColor: '#173D2E',
-      imageUrl: (stop.destinationId?.includes('food') || stop.reason?.toLowerCase().includes('food') || stop.reason?.toLowerCase().includes('dosa') || stop.reason?.toLowerCase().includes('coffee') || stop.reason?.toLowerCase().includes('breakfast') || stop.reason?.toLowerCase().includes('lunch') || stop.reason?.toLowerCase().includes('dinner')) ? '/images/food_bengaluru_darshini.jpg' : '/images/bengaluru.jpg'
+      imageUrl: getItineraryCategoryFallback(stop.destinationId, stop.reason)
     }
   };
+}
+
+function getItineraryCategoryFallback(category?: string, reason?: string): string {
+  const text = `${category || ''} ${reason || ''}`.toLowerCase();
+  if (text.includes('food') || text.includes('dosa') || text.includes('coffee') || text.includes('breakfast') || text.includes('lunch') || text.includes('dinner') || text.includes('culinary')) {
+    return '/images/food_bengaluru_darshini.jpg';
+  }
+  if (text.includes('beach') || text.includes('coast') || text.includes('sea') || text.includes('island')) {
+    return '/images/gokarna.jpg';
+  }
+  if (text.includes('nature') || text.includes('hill') || text.includes('ghat') || text.includes('forest') || text.includes('waterfall') || text.includes('peak')) {
+    return '/images/coorg.jpg';
+  }
+  if (text.includes('temple') || text.includes('spiritual') || text.includes('shrine')) {
+    return '/images/chamundeshwari_temple.jpg';
+  }
+  return '/images/hampi.jpg';
 }
 
 export default function App() {
@@ -126,7 +143,7 @@ export default function App() {
   const [isRegenerating, setIsRegenerating] = useState<boolean>(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [showExportModal, setShowExportModal] = useState<boolean>(false);
-  const [activeNav, setActiveNav] = useState<'home' | 'planner' | 'atlas'>('home');
+  const [activeNav, setActiveNav] = useState<'home' | 'planner' | 'atlas' | 'itinerary'>('home');
   const [activeFormPreset, setActiveFormPreset] = useState<Partial<TripPlannerInput> | undefined>();
   const [mobileMenuOpen, setMobileMenuOpen] = useState<boolean>(false);
   const [showSavedModal, setShowSavedModal] = useState<boolean>(false);
@@ -531,11 +548,8 @@ export default function App() {
       setActiveDayIndex(0);
       setSelectedStopId(hydratedDays[0]?.stops[0]?.id || null);
 
-      // Scroll smoothly to itinerary workspace
-      const workspaceElem = document.getElementById('itinerary-workspace');
-      if (workspaceElem) {
-        workspaceElem.scrollIntoView({ behavior: 'smooth' });
-      }
+      // Smoothly direct user to upper page where generated itinerary data is presented
+      scrollToItineraryWorkspace();
     } catch (err: any) {
       console.error('Trip planning error:', err);
       setErrorMsg(err.message || 'Unable to connect to planning engine. Please try again.');
@@ -807,10 +821,34 @@ export default function App() {
     setToastMessage(`Loaded: ${saved.tripTitle}`);
     setTimeout(() => setToastMessage(null), 4000);
 
-    const elem = document.getElementById('itinerary-workspace');
-    if (elem) {
-      elem.scrollIntoView({ behavior: 'smooth' });
-    }
+    scrollToItineraryWorkspace();
+  };
+
+  const scrollToItineraryWorkspace = () => {
+    setActiveNav('itinerary');
+    const executeScroll = () => {
+      const workspaceElem = document.getElementById('itinerary-workspace');
+      if (workspaceElem) {
+        workspaceElem.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        return true;
+      }
+      return false;
+    };
+
+    // Retry across animation frames and timeout microtasks to guarantee React has mounted the workspace DOM
+    requestAnimationFrame(() => {
+      if (!executeScroll()) {
+        setTimeout(() => {
+          if (!executeScroll()) {
+            setTimeout(() => {
+              if (!executeScroll()) {
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+              }
+            }, 120);
+          }
+        }, 50);
+      }
+    });
   };
 
   const handleGoToDashboard = () => {
@@ -891,6 +929,18 @@ export default function App() {
             >
               Discover
             </button>
+            {itinerary && (
+              <button
+                onClick={scrollToItineraryWorkspace}
+                className={`hover:text-[#102D23] transition-colors whitespace-nowrap shrink-0 cursor-pointer ${
+                  activeNav === 'itinerary'
+                    ? 'text-[#102D23] font-bold border-b-2 border-[#102D23] pb-1'
+                    : 'text-[#173D2E] pb-1 font-semibold'
+                }`}
+              >
+                Active Itinerary
+              </button>
+            )}
             <button
               onClick={scrollToPlanner}
               className={`hover:text-[#102D23] transition-colors whitespace-nowrap shrink-0 cursor-pointer ${
@@ -1082,6 +1132,17 @@ export default function App() {
             >
               Discover Karnataka
             </button>
+            {itinerary && (
+              <button
+                onClick={() => {
+                  setMobileMenuOpen(false);
+                  scrollToItineraryWorkspace();
+                }}
+                className="block w-full text-left py-2 text-[#173D2E] font-bold"
+              >
+                Active Itinerary
+              </button>
+            )}
             <button
               onClick={() => {
                 scrollToPlanner();
@@ -1168,19 +1229,35 @@ export default function App() {
 
         {/* Main Content Area */}
         <main className="flex-1 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 w-full space-y-12 overflow-x-clip relative z-10">
-        {/* Error notification banner if any */}
+        {/* Error notification banner with Retry action */}
         {errorMsg && (
-          <div className="p-4 bg-[#B9684B]/10 border border-[#B9684B]/30 rounded-xl text-[#8C3B1F] text-xs flex items-center justify-between gap-3">
-            <div className="flex items-center gap-2">
+          <div className="p-4 bg-[#B9684B]/10 border border-[#B9684B]/30 rounded-xl text-[#8C3B1F] text-xs flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 animate-in fade-in">
+            <div className="flex items-center gap-2.5">
               <AlertCircle className="w-4 h-4 shrink-0 text-[#B9684B]" />
-              <span>{errorMsg}</span>
+              <div>
+                <span className="font-semibold">Planning Notice: </span>
+                <span>{errorMsg}</span>
+              </div>
             </div>
-            <button
-              onClick={() => setErrorMsg(null)}
-              className="text-[#8C3B1F] hover:text-[#5C2310] font-semibold cursor-pointer"
-            >
-              Dismiss
-            </button>
+            <div className="flex items-center gap-2 self-end sm:self-auto shrink-0">
+              <button
+                type="button"
+                onClick={() => {
+                  setErrorMsg(null);
+                  scrollToPlanner();
+                }}
+                className="px-3 py-1 bg-[#173D2E] text-white hover:bg-[#102D23] font-semibold rounded-lg text-xs cursor-pointer transition-colors"
+              >
+                Retry
+              </button>
+              <button
+                type="button"
+                onClick={() => setErrorMsg(null)}
+                className="text-[#8C3B1F] hover:text-[#5C2310] font-semibold cursor-pointer px-2 py-1"
+              >
+                Dismiss
+              </button>
+            </div>
           </div>
         )}
 
@@ -1339,38 +1416,24 @@ export default function App() {
         onClearAll={handleClearAllSelectedPlaces}
         onPlanJourney={handlePlanJourneyFromSelected}
       />
-      </div> {/* End .post-hero-scenic-wrapper */}
-
       {/* ============================================================ */}
-      {/* END OF PAGE: PANORAMIC TRIP PLANNER & EDITORIAL FOOTER       */}
-      {/* (Pixel-Identical Composition matching Endofpage.png)         */}
+      {/* END OF PAGE: TRIP PLANNER & INTEGRATED EDITORIAL FOOTER      */}
       {/* ============================================================ */}
       <section
         id="planner"
-        className="relative w-full scroll-mt-12 overflow-hidden mt-12 bg-[#FAF6ED]"
+        className="relative w-full scroll-mt-12 overflow-hidden mt-8 z-10"
       >
-        {/* Panoramic Landscape Backdrop matching Endofpage.png (Virupaksha Temple on left, Western Ghats Waterfall on right) */}
-        <div
-          className="relative w-full overflow-hidden bg-[#FAF6ED]"
-          style={{
-            backgroundImage: "url('/images/planner_landscape_clean.png')",
-            backgroundSize: 'cover',
-            backgroundPosition: 'center top',
-            backgroundRepeat: 'no-repeat'
-          }}
-        >
-          {/* Centered Trip Planner Form Card */}
-          <div className="relative z-10 max-w-[1468px] mx-auto px-4 sm:px-6 lg:px-8 pt-0 pb-6 sm:pb-8">
-            <TripPlannerForm
-              key={formResetKey}
-              onPlanTrip={handlePlanTrip}
-              isLoading={isLoading}
-              initialValues={activeFormPreset}
-            />
-          </div>
+        {/* Centered Trip Planner Form Card */}
+        <div className="relative z-10 max-w-[1468px] mx-auto px-4 sm:px-6 lg:px-8 pb-10 sm:pb-14">
+          <TripPlannerForm
+            key={formResetKey}
+            onPlanTrip={handlePlanTrip}
+            isLoading={isLoading}
+            initialValues={activeFormPreset}
+          />
         </div>
 
-        {/* Editorial Footer Banner spanning 100% full width directly along bottom */}
+        {/* Integrated Editorial Footer */}
         <EditorialFooter
           onNavigateHome={handleGoToDashboard}
           onNavigatePlanner={scrollToPlanner}
@@ -1382,6 +1445,7 @@ export default function App() {
           }}
         />
       </section>
+      </div> {/* End .post-hero-scenic-wrapper */}
 
 
       {/* Export Modal */}

@@ -37,6 +37,7 @@ export interface Destination {
   localSpecialties?: string[];
   accentColor: string; // Hex for badge/card accent
   imageUrl: string;
+  objectPosition?: string;
 }
 
 export const KARNATAKA_DESTINATIONS: Destination[] = [
@@ -58,7 +59,8 @@ export const KARNATAKA_DESTINATIONS: Destination[] = [
     knownConstraints: ['Camera fee applicable', 'Audio guide recommended', 'Allow 30 min for parking in peak traffic'],
     localSpecialties: ['Filter Coffee', 'Benne Dosa at nearby Malleshwaram'],
     accentColor: '#173D2E',
-    imageUrl: '/images/bengaluru.jpg'
+    imageUrl: '/images/bengaluru.jpg',
+    objectPosition: 'center 20%'
   },
   {
     id: 'lalbagh-botanical-garden',
@@ -156,7 +158,8 @@ export const KARNATAKA_DESTINATIONS: Destination[] = [
     knownConstraints: ['Winding ghat road', '1,000 steps option available for pilgrims', 'Long queues during weekends'],
     localSpecialties: ['Panoramas of Mysuru city from View Point'],
     accentColor: '#D8A735',
-    imageUrl: '/images/chamundeshwari_temple.jpg'
+    imageUrl: '/images/chamundeshwari_temple.jpg',
+    objectPosition: 'center 20%'
   },
   {
     id: 'somnathpur-chennakesava-temple',
@@ -313,7 +316,8 @@ export const KARNATAKA_DESTINATIONS: Destination[] = [
     knownConstraints: ['Stairs between caves; watch out for inquisitive monkeys', 'Red sandstone gets warm by midday'],
     localSpecialties: ['Jowar Rotti (Sorghum flatbread) with Yennegayi (stuffed brinjal curry)'],
     accentColor: '#B9684B',
-    imageUrl: '/images/badami.jpg'
+    imageUrl: '/images/badami.jpg',
+    objectPosition: 'center 35%'
   },
   {
     id: 'pattadakal-monuments',
@@ -373,7 +377,8 @@ export const KARNATAKA_DESTINATIONS: Destination[] = [
     localSpecialties: ['Traditional Kodava Pandi Curry, Bamboo Shoot curry, and homemade passion fruit wine'],
     destinationType: 'attraction',
     accentColor: '#173D2E',
-    imageUrl: '/images/rajas_seat.jpg'
+    imageUrl: '/images/rajas_seat.jpg',
+    objectPosition: 'center 45%'
   },
   {
     id: 'abbey-falls-coorg',
@@ -514,7 +519,8 @@ export const KARNATAKA_DESTINATIONS: Destination[] = [
     knownConstraints: ['Beach trek trail links Kudle, Om, Half Moon, and Paradise beaches; wear sturdy sandals', 'Lifeguards on designated zones'],
     localSpecialties: ['Fresh seafood thali, wood-fired coastal pizza at cliffside shacks'],
     accentColor: '#173D2E',
-    imageUrl: '/images/gokarna.jpg'
+    imageUrl: '/images/gokarna.jpg',
+    objectPosition: 'center 40%'
   },
   {
     id: 'murudeshwar-temple-shiva',
@@ -533,7 +539,8 @@ export const KARNATAKA_DESTINATIONS: Destination[] = [
     knownConstraints: ['Lift inside Rajagopura has a small queue during holidays; beach water sports available nearby'],
     localSpecialties: ['Karavali coastal fish curry meals, fresh tender coconut'],
     accentColor: '#102D23',
-    imageUrl: '/images/murudeshwar.jpg'
+    imageUrl: '/images/murudeshwar.jpg',
+    objectPosition: 'center 20%'
   },
   {
     id: 'udupi-sri-krishna-matha',
@@ -592,7 +599,8 @@ export const KARNATAKA_DESTINATIONS: Destination[] = [
     knownConstraints: ['Steps to the bottom of the gorge are open subject to monsoon safety regulations'],
     localSpecialties: ['Malnad Jackfruit Kadubu, steamed patrode, and hot tea'],
     accentColor: '#102D23',
-    imageUrl: '/images/jog_falls.jpg'
+    imageUrl: '/images/jog_falls.jpg',
+    objectPosition: 'center 20%'
   },
   {
     id: 'agumbe-rainforest-sunset',

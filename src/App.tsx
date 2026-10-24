@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { EditorialHero } from './components/EditorialHero';
+import { CuratedExperiences } from './components/CuratedExperiences';
 import { TripPlannerForm } from './components/TripPlannerForm';
 import { EditorialFooter } from './components/EditorialFooter';
 import { InteractiveMap } from './components/InteractiveMap';
@@ -1147,17 +1148,26 @@ export default function App() {
         )}
       </header>
 
-      {/* 2. FULL-WIDTH EDITORIAL HERO & EXPLORE BY EXPERIENCE SECTION (matches hero.png reference) */}
+      {/* 2. FULL-WIDTH EDITORIAL HERO (Protected, Unchanged) */}
       {!itinerary && (
         <EditorialHero
           onPlanClick={scrollToPlanner}
           onExploreClick={scrollToAtlas}
-          onSelectCategory={() => scrollToAtlas()}
         />
       )}
 
-      {/* Main Content Area */}
-      <main className="flex-1 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 w-full space-y-12 overflow-x-clip">
+      {/* 3. POST-HERO CONTINUOUS SCENIC BACKGROUND WRAPPER */}
+      <div className="post-hero-scenic-wrapper relative w-full overflow-hidden">
+        {/* Curated Experiences (Explore by Experience) */}
+        {!itinerary && (
+          <CuratedExperiences
+            onExploreClick={scrollToAtlas}
+            onSelectCategory={() => scrollToAtlas()}
+          />
+        )}
+
+        {/* Main Content Area */}
+        <main className="flex-1 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 w-full space-y-12 overflow-x-clip relative z-10">
         {/* Error notification banner if any */}
         {errorMsg && (
           <div className="p-4 bg-[#B9684B]/10 border border-[#B9684B]/30 rounded-xl text-[#8C3B1F] text-xs flex items-center justify-between gap-3">
@@ -1331,35 +1341,23 @@ export default function App() {
       />
 
       {/* ============================================================ */}
-      {/* END OF PAGE: PANORAMIC TRIP PLANNER & EDITORIAL FOOTER       */}
-      {/* (Pixel-Identical Composition matching Endofpage.png)         */}
+      {/* END OF PAGE: TRIP PLANNER & INTEGRATED EDITORIAL FOOTER      */}
       {/* ============================================================ */}
       <section
         id="planner"
-        className="relative w-full scroll-mt-12 overflow-hidden mt-12 bg-[#FAF6ED]"
+        className="relative w-full scroll-mt-12 overflow-hidden mt-8 z-10"
       >
-        {/* Panoramic Landscape Backdrop matching Endofpage.png (Virupaksha Temple on left, Western Ghats Waterfall on right) */}
-        <div
-          className="relative w-full overflow-hidden bg-[#FAF6ED]"
-          style={{
-            backgroundImage: "url('/images/planner_landscape_clean.png')",
-            backgroundSize: 'cover',
-            backgroundPosition: 'center top',
-            backgroundRepeat: 'no-repeat'
-          }}
-        >
-          {/* Centered Trip Planner Form Card */}
-          <div className="relative z-10 max-w-[1468px] mx-auto px-4 sm:px-6 lg:px-8 pt-0 pb-6 sm:pb-8">
-            <TripPlannerForm
-              key={formResetKey}
-              onPlanTrip={handlePlanTrip}
-              isLoading={isLoading}
-              initialValues={activeFormPreset}
-            />
-          </div>
+        {/* Centered Trip Planner Form Card */}
+        <div className="relative z-10 max-w-[1468px] mx-auto px-4 sm:px-6 lg:px-8 pb-10 sm:pb-14">
+          <TripPlannerForm
+            key={formResetKey}
+            onPlanTrip={handlePlanTrip}
+            isLoading={isLoading}
+            initialValues={activeFormPreset}
+          />
         </div>
 
-        {/* Editorial Footer Banner spanning 100% full width directly along bottom */}
+        {/* Integrated Editorial Footer */}
         <EditorialFooter
           onNavigateHome={handleGoToDashboard}
           onNavigatePlanner={scrollToPlanner}
@@ -1371,6 +1369,7 @@ export default function App() {
           }}
         />
       </section>
+      </div> {/* End .post-hero-scenic-wrapper */}
 
 
       {/* Export Modal */}

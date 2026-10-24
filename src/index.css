@@ -71,6 +71,34 @@
   }
 }
 
+/* Continuous Extra-Long Scenic Background extending throughout post-hero page */
+.post-hero-scenic-wrapper {
+  position: relative;
+  width: 100%;
+  background-image: url("/images/page_scenic_background.webp");
+  background-size: 100% 100%;
+  background-position: center top;
+  background-repeat: no-repeat;
+  background-color: #FAF6ED;
+  isolation: isolate;
+}
+
+.post-hero-scenic-wrapper::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background: linear-gradient(
+    180deg,
+    rgba(250, 246, 237, 0.40) 0%,
+    rgba(250, 246, 237, 0.15) 15%,
+    rgba(250, 246, 237, 0.10) 45%,
+    rgba(250, 246, 237, 0.18) 75%,
+    rgba(250, 246, 237, 0.35) 100%
+  );
+}
+
 /* Subtle fine paper texture overlay */
 .paper-texture {
   background-image: radial-gradient(rgba(41, 45, 41, 0.03) 1px, transparent 0);

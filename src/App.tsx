@@ -1336,25 +1336,27 @@ export default function App() {
       {/* ============================================================ */}
       <section
         id="planner"
-        className="relative w-full scroll-mt-12 overflow-hidden mt-12 bg-[#EDE8DE]"
-        style={{
-          backgroundImage: "url('/images/background.png')",
-          backgroundSize: 'cover',
-          backgroundPosition: 'center bottom',
-          backgroundRepeat: 'no-repeat'
-        }}
+        className="relative w-full scroll-mt-12 overflow-hidden mt-12 bg-[#FAF6ED]"
       >
-        {/* Subtle atmospheric vignette gradient along top */}
-        <div className="absolute top-0 inset-x-0 h-16 bg-gradient-to-b from-[#FAF6ED] to-transparent pointer-events-none" />
-
-        {/* Centered Trip Planner Form Card */}
-        <div className="relative z-10 max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 pt-8 sm:pt-12 pb-6 sm:pb-10">
-          <TripPlannerForm
-            key={formResetKey}
-            onPlanTrip={handlePlanTrip}
-            isLoading={isLoading}
-            initialValues={activeFormPreset}
-          />
+        {/* Panoramic Landscape Backdrop matching Endofpage.png (Virupaksha Temple on left, Western Ghats Waterfall on right) */}
+        <div
+          className="relative w-full overflow-hidden bg-[#FAF6ED]"
+          style={{
+            backgroundImage: "url('/images/planner_landscape_clean.png')",
+            backgroundSize: 'cover',
+            backgroundPosition: 'center top',
+            backgroundRepeat: 'no-repeat'
+          }}
+        >
+          {/* Centered Trip Planner Form Card */}
+          <div className="relative z-10 max-w-[1468px] mx-auto px-4 sm:px-6 lg:px-8 pt-0 pb-6 sm:pb-8">
+            <TripPlannerForm
+              key={formResetKey}
+              onPlanTrip={handlePlanTrip}
+              isLoading={isLoading}
+              initialValues={activeFormPreset}
+            />
+          </div>
         </div>
 
         {/* Editorial Footer Banner spanning 100% full width directly along bottom */}

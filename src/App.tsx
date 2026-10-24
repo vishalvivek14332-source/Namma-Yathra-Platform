@@ -1339,25 +1339,38 @@ export default function App() {
         onClearAll={handleClearAllSelectedPlaces}
         onPlanJourney={handlePlanJourneyFromSelected}
       />
+      </div> {/* End .post-hero-scenic-wrapper */}
 
       {/* ============================================================ */}
-      {/* END OF PAGE: TRIP PLANNER & INTEGRATED EDITORIAL FOOTER      */}
+      {/* END OF PAGE: PANORAMIC TRIP PLANNER & EDITORIAL FOOTER       */}
+      {/* (Pixel-Identical Composition matching Endofpage.png)         */}
       {/* ============================================================ */}
       <section
         id="planner"
-        className="relative w-full scroll-mt-12 overflow-hidden mt-8 z-10"
+        className="relative w-full scroll-mt-12 overflow-hidden mt-12 bg-[#FAF6ED]"
       >
-        {/* Centered Trip Planner Form Card */}
-        <div className="relative z-10 max-w-[1468px] mx-auto px-4 sm:px-6 lg:px-8 pb-10 sm:pb-14">
-          <TripPlannerForm
-            key={formResetKey}
-            onPlanTrip={handlePlanTrip}
-            isLoading={isLoading}
-            initialValues={activeFormPreset}
-          />
+        {/* Panoramic Landscape Backdrop matching Endofpage.png (Virupaksha Temple on left, Western Ghats Waterfall on right) */}
+        <div
+          className="relative w-full overflow-hidden bg-[#FAF6ED]"
+          style={{
+            backgroundImage: "url('/images/planner_landscape_clean.png')",
+            backgroundSize: 'cover',
+            backgroundPosition: 'center top',
+            backgroundRepeat: 'no-repeat'
+          }}
+        >
+          {/* Centered Trip Planner Form Card */}
+          <div className="relative z-10 max-w-[1468px] mx-auto px-4 sm:px-6 lg:px-8 pt-0 pb-6 sm:pb-8">
+            <TripPlannerForm
+              key={formResetKey}
+              onPlanTrip={handlePlanTrip}
+              isLoading={isLoading}
+              initialValues={activeFormPreset}
+            />
+          </div>
         </div>
 
-        {/* Integrated Editorial Footer */}
+        {/* Editorial Footer Banner spanning 100% full width directly along bottom */}
         <EditorialFooter
           onNavigateHome={handleGoToDashboard}
           onNavigatePlanner={scrollToPlanner}
@@ -1369,7 +1382,6 @@ export default function App() {
           }}
         />
       </section>
-      </div> {/* End .post-hero-scenic-wrapper */}
 
 
       {/* Export Modal */}

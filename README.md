@@ -2,7 +2,6 @@
 ### Editorial AI Travel Planner & Circuit Intelligence for Karnataka
 
 🌐 **Live Production Application:** [https://namma-yathra-platform.onrender.com/](https://namma-yathra-platform.onrender.com/)  
-**Development Preview:** [https://ais-pre-vl7shfbubzvznuqjmfarxa-982092797867.asia-east1.run.app](https://ais-pre-vl7shfbubzvznuqjmfarxa-982092797867.asia-east1.run.app)
 
 ---
 

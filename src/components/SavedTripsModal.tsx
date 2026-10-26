@@ -316,6 +316,8 @@ export const SavedTripsModal: React.FC<SavedTripsModalProps> = ({
                       ? 'MongoDB Atlas Network Access / Timeout'
                       : dbStatus?.reason === 'dns_failed'
                       ? 'MongoDB Atlas Hostname Resolution Failed'
+                      : dbStatus?.reason === 'tls_failed'
+                      ? 'MongoDB Atlas Network Access / TLS Alert'
                       : 'MongoDB Atlas Connection Required for Persistent Storage'}
                   </span>
                 </div>
@@ -328,6 +330,28 @@ export const SavedTripsModal: React.FC<SavedTripsModalProps> = ({
                       </>
                     )}
                 </p>
+                <div className="pt-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsLoading(true);
+                      fetchDatabaseStatus(true).then((newStatus) => {
+                        setDbStatus(newStatus);
+                        if (newStatus.connected) {
+                          loadData(searchQuery);
+                        } else {
+                          setIsLoading(false);
+                        }
+                      }).catch(() => {
+                        setIsLoading(false);
+                      });
+                    }}
+                    className="px-3 py-1.5 bg-[#173D2E] text-white hover:bg-[#102D23] font-semibold rounded-lg text-xs cursor-pointer transition-colors flex items-center gap-1.5"
+                  >
+                    <RefreshCw className="w-3.5 h-3.5" />
+                    <span>Retry Connection</span>
+                  </button>
+                </div>
               </div>
             )}
 

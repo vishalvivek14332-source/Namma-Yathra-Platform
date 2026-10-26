@@ -9,13 +9,32 @@ import {
   isDatabaseConnecting,
   waitForConnection,
   getDatabaseError,
-  UserDocument
+  UserDocument,
+  canAttemptReconnect,
+  connectToDatabase
 } from './db';
 
 export const authRouter = Router();
 
 export const AUTH_COOKIE_NAME = 'namma_yatra_token';
 export const JWT_SECRET = process.env.JWT_SECRET || 'namma-yatra-jwt-secret-karnataka-2026';
+
+/**
+ * Ensures database is connected, attempting bounded on-demand reconnect if needed
+ */
+async function ensureDatabase(): Promise<boolean> {
+  if (isDatabaseConnected()) return true;
+  if (isDatabaseConnecting()) {
+    await waitForConnection();
+    return isDatabaseConnected();
+  }
+  if (canAttemptReconnect(5000)) {
+    console.log('[Auth] Database disconnected, attempting bounded reconnect...');
+    await connectToDatabase({ maxRetries: 1 });
+    return isDatabaseConnected();
+  }
+  return false;
+}
 
 export interface AuthUser {
   id: string;
@@ -155,16 +174,11 @@ authRouter.post('/register', async (req: Request, res: Response) => {
     });
   }
 
-  if (!isDatabaseConnected()) {
-    if (isDatabaseConnecting()) {
-      await waitForConnection();
-    }
-    if (!isDatabaseConnected()) {
-      return res.status(503).json({
-        success: false,
-        error: getDatabaseError() || 'Database not connected. Please ensure MONGODB_URI is configured in the server environment.'
-      });
-    }
+  if (!(await ensureDatabase())) {
+    return res.status(503).json({
+      success: false,
+      error: getDatabaseError() || 'Database not connected. Please ensure MONGODB_URI is configured in the server environment.'
+    });
   }
 
   try {
@@ -253,16 +267,11 @@ authRouter.post('/login', async (req: Request, res: Response) => {
     });
   }
 
-  if (!isDatabaseConnected()) {
-    if (isDatabaseConnecting()) {
-      await waitForConnection();
-    }
-    if (!isDatabaseConnected()) {
-      return res.status(503).json({
-        success: false,
-        error: getDatabaseError() || 'Database not connected. Please ensure MONGODB_URI is configured in the server environment.'
-      });
-    }
+  if (!(await ensureDatabase())) {
+    return res.status(503).json({
+      success: false,
+      error: getDatabaseError() || 'Database not connected. Please ensure MONGODB_URI is configured in the server environment.'
+    });
   }
 
   try {
@@ -380,16 +389,11 @@ authRouter.get('/me', async (req: Request, res: Response) => {
  * Generates an expiring password reset token
  */
 authRouter.post('/forgot-password', async (req: Request, res: Response) => {
-  if (!isDatabaseConnected()) {
-    if (isDatabaseConnecting()) {
-      await waitForConnection();
-    }
-    if (!isDatabaseConnected()) {
-      return res.status(503).json({
-        success: false,
-        error: getDatabaseError() || 'Database service is in standby mode. Please configure MONGODB_URI in the server environment.'
-      });
-    }
+  if (!(await ensureDatabase())) {
+    return res.status(503).json({
+      success: false,
+      error: getDatabaseError() || 'Database service is in standby mode. Please configure MONGODB_URI in the server environment.'
+    });
   }
 
   try {
@@ -458,16 +462,11 @@ authRouter.post('/forgot-password', async (req: Request, res: Response) => {
  * Verifies single-use token and updates user password
  */
 authRouter.post('/reset-password', async (req: Request, res: Response) => {
-  if (!isDatabaseConnected()) {
-    if (isDatabaseConnecting()) {
-      await waitForConnection();
-    }
-    if (!isDatabaseConnected()) {
-      return res.status(503).json({
-        success: false,
-        error: getDatabaseError() || 'Database service is in standby mode. Please configure MONGODB_URI in the server environment.'
-      });
-    }
+  if (!(await ensureDatabase())) {
+    return res.status(503).json({
+      success: false,
+      error: getDatabaseError() || 'Database service is in standby mode. Please configure MONGODB_URI in the server environment.'
+    });
   }
 
   try {

@@ -11,7 +11,8 @@ import {
   isValidObjectId,
   DATABASE_NAME,
   canAttemptReconnect,
-  connectToDatabase
+  connectToDatabase,
+  pingDatabase
 } from './db';
 import { KARNATAKA_DESTINATIONS } from '../data/destinations';
 import { requireAuth } from './authRoutes';
@@ -19,12 +20,15 @@ import { requireAuth } from './authRoutes';
 export const tripRouter = Router();
 
 /**
- * Middleware: Verify database connectivity before attempting operations
+ * Middleware: Verify database connectivity before attempting operations with on-demand bounded reconnect
  */
 async function requireDatabase(req: Request, res: Response, next: () => void) {
   if (!isDatabaseConnected()) {
     if (isDatabaseConnecting()) {
       await waitForConnection();
+    } else if (canAttemptReconnect(5000)) {
+      console.log('[requireDatabase] Database not connected, attempting bounded reconnect...');
+      await connectToDatabase({ maxRetries: 1 });
     }
     if (!isDatabaseConnected()) {
       return res.status(503).json({
@@ -60,11 +64,17 @@ tripRouter.get('/db/status', async (req: Request, res: Response) => {
     await waitForConnection(3000);
   }
 
-  // Allow bounded retry on demand via ?retry=true or if 30s cooldown elapsed with ?probe=true
-  const shouldRetry = req.query.retry === 'true' || (req.query.probe === 'true' && canAttemptReconnect());
-  if (!isDatabaseConnected() && shouldRetry) {
-    connectToDatabase({ maxRetries: 1 }).catch(() => {});
-    await waitForConnection(2500);
+  // Allow bounded retry on demand via ?retry=true, ?probe=true, or if disconnected and cooldown passed
+  const isExplicitRetry = req.query.retry === 'true';
+  const shouldRetry = isExplicitRetry || req.query.probe === 'true' || !isDatabaseConnected();
+  if (!isDatabaseConnected() && shouldRetry && canAttemptReconnect(isExplicitRetry ? 0 : 5000)) {
+    console.log('[GET /api/db/status] Triggering on-demand connection attempt...');
+    await connectToDatabase({ maxRetries: 1 });
+  }
+
+  // Active ping check if connected to ensure socket is live
+  if (isDatabaseConnected()) {
+    await pingDatabase();
   }
 
   const dbState = getDatabaseState();

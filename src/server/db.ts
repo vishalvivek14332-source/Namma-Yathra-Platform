@@ -491,13 +491,46 @@ export async function runAtlasDiagnostics(
 }
 
 /**
- * Checks whether a background reconnect can be attempted (respecting 30s cooldown)
+ * Checks whether a background or on-demand reconnect can be attempted
  */
-export function canAttemptReconnect(): boolean {
+export function canAttemptReconnect(cooldownMs: number = 5000): boolean {
   if (isConnected || isConnecting) return false;
   const uri = process.env.MONGODB_URI?.trim();
   if (!uri || uri.includes('paste_your_copied_connection_string_here')) return false;
-  return Date.now() - lastAttemptTimestamp >= 30000;
+  return Date.now() - lastAttemptTimestamp >= cooldownMs;
+}
+
+/**
+ * Executes a real database ping to verify active liveness
+ */
+export async function pingDatabase(): Promise<{ connected: boolean; latencyMs?: number; error?: string }> {
+  if (!db || !isConnected) {
+    return { connected: false, error: getDatabaseError() || 'Database not connected' };
+  }
+  const start = Date.now();
+  try {
+    await db.command({ ping: 1 });
+    if (lastConnectionState.error) {
+      lastConnectionState.error = undefined;
+      lastConnectionState.reason = undefined;
+    }
+    return { connected: true, latencyMs: Date.now() - start };
+  } catch (err: any) {
+    console.warn('[MongoDB] Database ping failed:', err.message);
+    isConnected = false;
+    const diagnosis = diagnoseMongoError(err);
+    lastConnectionState = {
+      connected: false,
+      connecting: false,
+      database: DATABASE_NAME,
+      hasMongoUri: true,
+      reason: diagnosis.reason,
+      error: diagnosis.message,
+      clusterHost: inspectMongoUriConfig(process.env.MONGODB_URI).clusterHost,
+      lastAttemptAt: new Date().toISOString()
+    };
+    return { connected: false, error: diagnosis.message };
+  }
 }
 
 /**
@@ -507,9 +540,16 @@ export function canAttemptReconnect(): boolean {
 export async function connectToDatabase(options?: {
   maxRetries?: number;
   initialDelayMs?: number;
+  force?: boolean;
 }): Promise<{ connected: boolean; error?: string }> {
-  if (isConnected && db) {
-    return { connected: true };
+  if (isConnected && db && !options?.force) {
+    try {
+      await db.command({ ping: 1 });
+      return { connected: true };
+    } catch {
+      console.warn('[MongoDB] Stale connection detected during connect check, reconnecting...');
+      isConnected = false;
+    }
   }
 
   if (isConnecting) {
@@ -750,6 +790,20 @@ export function getDatabaseState(): DbConnectionState {
     uri.includes('paste_your_copied_connection_string_here') ||
     uri.includes('YOUR_MONGODB_URI_HERE');
 
+  if (isConnected && db) {
+    return {
+      connected: true,
+      connecting: false,
+      database: DATABASE_NAME,
+      hasMongoUri: true,
+      clusterHost: lastConnectionState.clusterHost,
+      lastAttemptAt: lastConnectionState.lastAttemptAt,
+      diagnosticsSummary: lastConnectionState.diagnosticsSummary,
+      error: undefined,
+      reason: undefined
+    };
+  }
+
   return {
     ...lastConnectionState,
     connected: isConnected,
@@ -759,9 +813,10 @@ export function getDatabaseState(): DbConnectionState {
 }
 
 /**
- * Retrieves the last diagnosed database error message if any
+ * Retrieves the last diagnosed database error message if any (strictly undefined when connected)
  */
 export function getDatabaseError(): string | undefined {
+  if (isConnected && db) return undefined;
   return lastConnectionState.error;
 }
 

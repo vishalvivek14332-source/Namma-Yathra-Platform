@@ -16,9 +16,10 @@ export interface DatabaseStatus {
 /**
  * Checks MongoDB Atlas connection status
  */
-export async function fetchDatabaseStatus(): Promise<DatabaseStatus> {
+export async function fetchDatabaseStatus(retry?: boolean): Promise<DatabaseStatus> {
   try {
-    const res = await fetch('/api/db/status', { credentials: 'include' });
+    const url = retry ? '/api/db/status?retry=true' : '/api/db/status';
+    const res = await fetch(url, { credentials: 'include' });
     if (!res.ok) {
       return { connected: false, message: `HTTP ${res.status}` };
     }

@@ -25,7 +25,8 @@ import {
 import {
   saveTripToDatabase,
   updateTripInDatabase,
-  getSavedTrips
+  getSavedTrips,
+  fetchDatabaseStatus
 } from './services/tripStorageService';
 import { getCurrentUser, logoutUser, AuthUser } from './services/authService';
 import { getDestinationById, KARNATAKA_DESTINATIONS, Destination } from './data/destinations';
@@ -206,6 +207,18 @@ export default function App() {
   useEffect(() => {
     localStorage.setItem(SELECTED_PLACES_KEY, JSON.stringify(selectedPlaces));
   }, [selectedPlaces]);
+
+  // Proactively clear stale database error notices if database is verified connected
+  useEffect(() => {
+    if (errorMsg && (errorMsg.includes('MongoDB') || errorMsg.includes('TLS') || errorMsg.includes('database') || errorMsg.includes('Atlas'))) {
+      fetchDatabaseStatus().then((status) => {
+        if (status.connected) {
+          console.log('[App] Database is verified connected; clearing stale database warning.');
+          setErrorMsg(null);
+        }
+      }).catch(() => {});
+    }
+  }, [errorMsg]);
 
   // Restore cached trip and check user session on mount
   useEffect(() => {
@@ -747,6 +760,7 @@ export default function App() {
         });
 
         if (res.success) {
+          setErrorMsg(null);
           setSaveSuccess(true);
           setToastMessage('Trip updated in your Namma Yatra account!');
           setTimeout(() => setSaveSuccess(false), 3000);
@@ -764,6 +778,7 @@ export default function App() {
         // Save new trip to database
         const res = await saveTripToDatabase(itinerary);
         if (res.success && res.trip) {
+          setErrorMsg(null);
           setActiveSavedTripId(res.trip.id);
           setSavedTripsCount((prev) => prev + 1);
           setSaveSuccess(true);
@@ -1242,13 +1257,32 @@ export default function App() {
             <div className="flex items-center gap-2 self-end sm:self-auto shrink-0">
               <button
                 type="button"
-                onClick={() => {
-                  setErrorMsg(null);
-                  scrollToPlanner();
+                onClick={async () => {
+                  const isDbNotice = errorMsg && (errorMsg.includes('MongoDB') || errorMsg.includes('TLS') || errorMsg.includes('database') || errorMsg.includes('Atlas'));
+                  if (isDbNotice) {
+                    setToastMessage('Testing database connection...');
+                    const status = await fetchDatabaseStatus(true);
+                    if (status.connected) {
+                      setErrorMsg(null);
+                      setToastMessage('Connected to MongoDB Atlas!');
+                      if (itinerary && currentUser) {
+                        handleSaveTripToAtlas();
+                      }
+                    } else {
+                      setErrorMsg(status.error || status.message || 'Database not reachable');
+                      setToastMessage('Database connection test failed');
+                    }
+                    setTimeout(() => setToastMessage(null), 3500);
+                  } else {
+                    setErrorMsg(null);
+                    scrollToPlanner();
+                  }
                 }}
                 className="px-3 py-1 bg-[#173D2E] text-white hover:bg-[#102D23] font-semibold rounded-lg text-xs cursor-pointer transition-colors"
               >
-                Retry
+                {errorMsg && (errorMsg.includes('MongoDB') || errorMsg.includes('TLS') || errorMsg.includes('database') || errorMsg.includes('Atlas'))
+                  ? 'Retry Connection'
+                  : 'Retry'}
               </button>
               <button
                 type="button"

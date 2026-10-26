@@ -23,6 +23,10 @@ app.use('/api/auth', authRouter);
 app.use('/api', tripRouter);
 app.use('/api', nearbyRouter);
 
+process.on('unhandledRejection', (reason: any) => {
+  console.warn('[Server] Unhandled promise rejection prevented from crashing process:', reason?.message || reason);
+});
+
 // Initialize GoogleGenAI server client
 const apiKey = process.env.GEMINI_API_KEY;
 let ai: GoogleGenAI | null = null;
@@ -63,7 +67,6 @@ function isTransientGeminiError(err: any): boolean {
  * 1. gemini-3.5-flash-lite: ~3-4s latency, verified available, low quota usage
  * 2. gemini-3.5-flash: ~14s latency, verified secondary fallback
  * 3. gemini-3.6-flash: ~11s latency, verified tertiary fallback
- * (gemini-3.8-flash and gemini-flash-latest excluded due to >60-140s latency)
  */
 export const VERIFIED_GEMINI_MODELS = [
   'gemini-3.5-flash-lite',
@@ -82,7 +85,7 @@ interface GeminiGenerationResult {
 /**
  * Robust, low-latency content generation with:
  * - Low-latency model selection (gemini-3.5-flash-lite primary)
- * - Bounded request timeout per model (12 seconds)
+ * - Bounded request timeout per model (25 seconds)
  * - Exponential backoff with jitter for transient 429/503 errors
  * - Non-retry of permanent 400/401/404 errors
  * - Safe structured telemetry logging
@@ -100,7 +103,7 @@ async function generateGeminiContentWithFallback(params: {
     ? [params.preferredModel, ...VERIFIED_GEMINI_MODELS.filter(m => m !== params.preferredModel)]
     : VERIFIED_GEMINI_MODELS;
 
-  const perModelTimeoutMs = params.timeoutMs || 12000;
+  const perModelTimeoutMs = params.timeoutMs || 25000;
   const maxRetries = params.maxRetriesPerModel ?? 1;
   let overallLastError: any = null;
   let totalRetries = 0;
@@ -118,6 +121,9 @@ async function generateGeminiContentWithFallback(params: {
           contents: params.contents,
           config: params.config,
         });
+
+        // Attach non-throwing catch to prevent orphaned rejection crashing process on timeout
+        generatePromise.catch(() => {});
 
         const timeoutPromise = new Promise<never>((_, reject) => {
           const timer = setTimeout(() => {
@@ -451,7 +457,7 @@ Output MUST be valid JSON adhering strictly to this schema:
         maxOutputTokens: 2500
       },
       preferredModel: 'gemini-3.5-flash-lite',
-      timeoutMs: 12000
+      timeoutMs: 25000
     });
     console.log(`[Itinerary Generation] Successfully generated with ${modelUsed} in ${durationMs}ms (Retries: ${retryCount})`);
 
@@ -640,7 +646,7 @@ Output strictly JSON for Day ${targetDay}:
         maxOutputTokens: 1200
       },
       preferredModel: 'gemini-3.5-flash-lite',
-      timeoutMs: 10000
+      timeoutMs: 20000
     });
     console.log(`[Day Regeneration] Successfully refreshed Day ${targetDay} with ${modelUsed} in ${durationMs}ms`);
 

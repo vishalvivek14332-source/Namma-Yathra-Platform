@@ -292,6 +292,11 @@ export default function App() {
         });
         if (parsed.id) {
           setActiveSavedTripId(parsed.id);
+          // If restoring an already-saved Atlas itinerary, ensure any old exploration selection box is gone
+          setSelectedPlaces([]);
+          try {
+            localStorage.removeItem(SELECTED_PLACES_KEY);
+          } catch (e) {}
         }
       }
     } catch (err) {
@@ -360,6 +365,12 @@ export default function App() {
               ...itinerary,
               id: res.trip.id
             } as any);
+            // Clear selected places so the horizontal box is gone after saving to Atlas
+            setSelectedPlaces([]);
+            try {
+              localStorage.removeItem(SELECTED_PLACES_KEY);
+            } catch (e) {}
+            setActiveFormPreset((prev) => (prev ? { ...prev, selectedPlaces: [] } : undefined));
             setTimeout(() => setSaveSuccess(false), 3000);
             setTimeout(() => setToastMessage(null), 4000);
           }
@@ -763,6 +774,12 @@ export default function App() {
           setErrorMsg(null);
           setSaveSuccess(true);
           setToastMessage('Trip updated in your Namma Yatra account!');
+          // Clear selected places so the horizontal box is gone after saving to Atlas
+          setSelectedPlaces([]);
+          try {
+            localStorage.removeItem(SELECTED_PLACES_KEY);
+          } catch (e) {}
+          setActiveFormPreset((prev) => (prev ? { ...prev, selectedPlaces: [] } : undefined));
           setTimeout(() => setSaveSuccess(false), 3000);
           setTimeout(() => setToastMessage(null), 4000);
         } else {
@@ -788,6 +805,12 @@ export default function App() {
             ...itinerary,
             id: res.trip.id
           } as any);
+          // Clear selected places so the horizontal box is gone after saving to Atlas
+          setSelectedPlaces([]);
+          try {
+            localStorage.removeItem(SELECTED_PLACES_KEY);
+          } catch (e) {}
+          setActiveFormPreset((prev) => (prev ? { ...prev, selectedPlaces: [] } : undefined));
           setTimeout(() => setSaveSuccess(false), 3000);
           setTimeout(() => setToastMessage(null), 4000);
         } else {
@@ -833,6 +856,12 @@ export default function App() {
     setActiveSavedTripId(saved.id);
     setActiveDayIndex(0);
     setSelectedStopId(hydratedDays[0]?.stops[0]?.id || null);
+    // Clear selected places so the horizontal box is gone when viewing a saved Atlas trip
+    setSelectedPlaces([]);
+    try {
+      localStorage.removeItem(SELECTED_PLACES_KEY);
+    } catch (e) {}
+    setActiveFormPreset((prev) => (prev ? { ...prev, selectedPlaces: [] } : undefined));
     setToastMessage(`Loaded: ${saved.tripTitle}`);
     setTimeout(() => setToastMessage(null), 4000);
 
@@ -1449,6 +1478,7 @@ export default function App() {
         onMovePlace={handleMoveSelectedPlace}
         onClearAll={handleClearAllSelectedPlaces}
         onPlanJourney={handlePlanJourneyFromSelected}
+        onClose={handleClearAllSelectedPlaces}
       />
       {/* ============================================================ */}
       {/* END OF PAGE: TRIP PLANNER & INTEGRATED EDITORIAL FOOTER      */}

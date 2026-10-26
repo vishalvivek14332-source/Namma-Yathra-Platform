@@ -25,6 +25,7 @@ interface SelectedPlacesPanelProps {
   onMovePlace: (id: string, direction: 'up' | 'down') => void;
   onClearAll: () => void;
   onPlanJourney: () => void;
+  onClose?: () => void;
 }
 
 export const SelectedPlacesPanel: React.FC<SelectedPlacesPanelProps> = ({
@@ -33,7 +34,8 @@ export const SelectedPlacesPanel: React.FC<SelectedPlacesPanelProps> = ({
   onRemovePlace,
   onMovePlace,
   onClearAll,
-  onPlanJourney
+  onPlanJourney,
+  onClose
 }) => {
   const [isExpanded, setIsExpanded] = useState<boolean>(false);
 
@@ -122,6 +124,19 @@ export const SelectedPlacesPanel: React.FC<SelectedPlacesPanelProps> = ({
               <span>Plan My Journey</span>
               <ArrowRight className="w-4 h-4 text-[#102D23]" />
             </button>
+
+            {/* Dismiss / Close Button */}
+            {onClose && (
+              <button
+                type="button"
+                onClick={onClose}
+                aria-label="Dismiss journey list"
+                title="Dismiss list"
+                className="p-2 rounded-xl bg-[#FFFEFA]/10 hover:bg-[#8C3B1F]/80 text-[#FFFEFA] transition-colors cursor-pointer flex items-center justify-center ml-0.5"
+              >
+                <X className="w-4 h-4 text-[#E5DFD3]" />
+              </button>
+            )}
           </div>
         </div>
 

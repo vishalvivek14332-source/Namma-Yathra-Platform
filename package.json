@@ -16,7 +16,7 @@
     "test:ai": "tsx tests/test_gemini_resilience.ts"
   },
   "engines": {
-    "node": "22.x"
+    "node": ">=20.0.0"
   },
   "dependencies": {
     "@google/genai": "^2.4.0",

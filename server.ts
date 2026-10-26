@@ -19,6 +19,16 @@ const PORT = process.env.PORT || 3000;
 
 app.use(express.json());
 app.use(cookieParser());
+
+// Render and Cloud platform health check probe
+app.get(['/healthz', '/api/health'], (_req, res) => {
+  res.status(200).json({
+    status: 'ok',
+    uptimeSeconds: Math.floor(process.uptime()),
+    timestamp: new Date().toISOString()
+  });
+});
+
 app.use('/api/auth', authRouter);
 app.use('/api', tripRouter);
 app.use('/api', nearbyRouter);
@@ -795,6 +805,7 @@ if (process.env.NODE_ENV !== 'production') {
 // Await MongoDB connection attempt during startup before opening HTTP port
 await connectToDatabase();
 
-app.listen(PORT, () => {
-  console.log(`Namma Yatra server running on http://localhost:${PORT}`);
+const listenPort = Number(PORT) || 3000;
+app.listen(listenPort, '0.0.0.0', () => {
+  console.log(`Namma Yatra server running on port ${listenPort} (bound to 0.0.0.0)`);
 });

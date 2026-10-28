@@ -1,7 +1,7 @@
 # Namma Yatra — Your Karnataka. Your Journey.
 ### Editorial AI Travel Planner & Circuit Intelligence for Karnataka
 
-🌐 **Live Production Application:** [https://namma-yathra-platform.onrender.com/](https://namma-yathra-platform.onrender.com/)  
+🌐 **Live Production Application:** [https://namma-yathra-platform.onrender.com/](https://namma-yathra-platform.onrender.com/)   
 
 ---
 
@@ -23,6 +23,7 @@ However, planning a trip across Karnataka presents major challenges:
 ## 2. Key Features
 
 - **Brand Identity & Kannada Heritage:** Refined editorial design grounded in warm ivory (`#F7F4EC`), deep forest-green (`#173D2E`), terracotta accents (`#B9684B`), gold highlights (`#D8A735`), and authentic typography.
+- **Nearby Places & Geolocation Discovery Engine:** Instant browser GPS geolocation detection, radius slider (10–150 km), category filters (Heritage, Nature, Food, Temples, Beaches, Wildlife), and a "Selected Places" journey builder tray to handpick destinations before generating an itinerary.
 - **Secure Authentication & Cloud Synchronization:** User registration, password hashing (`bcryptjs`), and HTTP-only session cookies (`jsonwebtoken`) guaranteeing per-user trip privacy.
 - **Public Exploration & Gated Saving:** Guests can freely explore the Karnataka Atlas and generate AI itineraries; saving to cloud or managing saved journeys is gated by authentication with seamless auto-save after sign in.
 - **Multi-Origin Flexibility:** Support for travellers originating from Bengaluru, Mysuru, Hubballi-Dharwad, Mangaluru, Belagavi, Kalaburagi, Shivamogga, or custom border hubs.
@@ -51,43 +52,49 @@ However, planning a trip across Karnataka presents major challenges:
 ## 4. Architecture Diagram
 
 ```
-+-------------------------------------------------------------------------+
-|                    CLIENT (React 19 / TypeScript)                       |
-|                                                                         |
-|   +--------------------+     +-------------------+    +--------------+  |
-|   | TripPlannerForm    | --> | ItineraryWorkspace| -->|InteractiveMap|  |
-|   | (Pace/Origin/Cost) |     | (Stops & Days)    |    | (OpenStMap)  |  |
-|   +--------------------+     +-------------------+    +--------------+  |
-|             |                          |                     ^          |
-|             v                          v                     |          |
-|   +--------------------+     +-------------------+    +--------------+  |
-|   | BudgetCalculator   |     | AuthModal         |    | ExportModal  |  |
-|   | (Deterministic)    |     | (Sign In/Register)|    | (Print / MD) |  |
-|   +--------------------+     +-------------------+    +--------------+  |
-+-------------|--------------------------|---------------------|----------+
-              | (POST /api/plan-trip)    | (Cookie Auth)       |
-              v                          v                     |
-+--------------------------------------------------------------|----------+
-|                     EXPRESS SERVER (server.ts / Node.js)     |          |
-|                                                              |          |
-|   +-----------------------+      +------------------------+  |          |
-|   | /api/auth             |      | /api/trips             |  |          |
-|   | Register, Login, Me,  |      | requireAuth Middleware |  |          |
-|   | Forgot/Reset Password |      | Isolated by req.user.id|  |          |
-|   +-----------------------+      +------------------------+  |          |
-|               |                               |              |          |
-|               v                               v              |          |
-|   +-------------------------------------------------------+  |          |
-|   | MongoDB Atlas (Database: YatraAI)                     |  |          |
-|   | Collections: `users`, `trips`, `destinations`         |  |          |
-|   +-------------------------------------------------------+  |          |
-|                                |                                        |
-|                                v                                        |
-|   +-------------------------------------------------------+             |
-|   | Gemini Flash AI Proxy & Curated Karnataka Database    |-------------+
-|   | (39 ASI, KSTDC & GI-Tagged Certified Destinations)    |             |
-|   +-------------------------------------------------------+             |
-+-------------------------------------------------------------------------+
++---------------------------------------------------------------------------------+
+|                         CLIENT (React 19 / TypeScript)                          |
+|                                                                                 |
+|   +--------------------+     +----------------------+     +------------------+  |
+|   | NearbyExplorer     | --> | SelectedPlacesPanel  | --> | TripPlannerForm  |  |
+|   | (GPS/Radius Search)|     | (Custom Staging Tray)|     | (Pace/Origin)    |  |
+|   +--------------------+     +----------------------+     +------------------+  |
+|             |                                                       |           |
+|             v                                                       v           |
+|   +--------------------+     +----------------------+     +------------------+  |
+|   | InteractiveMap     | <-- | ItineraryWorkspace   | <-- | (POST /api/plan) |  |
+|   | (OpenStreetMap)    |     | (Stops, Days, Weather|     +------------------+  |
+|   +--------------------+     +----------------------+                           |
+|             ^                          |                     +---------------+  |
+|             |                          v                     | AuthModal     |  |
+|   +--------------------+     +----------------------+        | (Bcrypt/JWT)  |  |
+|   | BudgetBreakdown    |     | ExportModal          |        +---------------+  |
+|   | (Deterministic)    |     | (Print / Markdown)   |        | SavedTrips    |  |
+|   +--------------------+     +----------------------+        +---------------+  |
++-------------|--------------------------|-----------------------------|----------+
+              | (POST /api/plan-trip)    | (Cookie Auth)               |
+              v                          v                             |
++----------------------------------------------------------------------|----------+
+|                     EXPRESS SERVER (server.ts / Node.js)             |          |
+|                                                                      |          |
+|   +-----------------------+      +------------------------+          |          |
+|   | /api/auth             |      | /api/trips             |          |          |
+|   | Register, Login, Me,  |      | requireAuth Middleware |          |          |
+|   | Forgot/Reset Password |      | Isolated by req.user.id|          |          |
+|   +-----------------------+      +------------------------+          |          |
+|               |                               |                      |          |
+|               v                               v                      |          |
+|   +-------------------------------------------------------+          |          |
+|   | MongoDB Atlas (Database: YatraAI)                     |          |          |
+|   | Collections: `users`, `trips`, `destinations`         |          |          |
+|   +-------------------------------------------------------+          |          |
+|                                |                                                |
+|                                v                                                |
+|   +-------------------------------------------------------+                     |
+|   | Gemini Flash AI Proxy & Curated Karnataka Database    |---------------------+
+|   | (39 ASI, KSTDC & GI-Tagged Certified Destinations)    |                     |
+|   +-------------------------------------------------------+                     |
++---------------------------------------------------------------------------------+
 ```
 
 ---

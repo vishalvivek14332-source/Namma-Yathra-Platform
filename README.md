@@ -4,9 +4,6 @@
 **Hackathon:** NIE Karnataka Hackathon  
 **Selected Problem Statement:** AI Travel Planner for Karnataka  
 **Live Production Application:** [https://namma-yathra-platform.onrender.com/](https://namma-yathra-platform.onrender.com/)  
-**GitHub Repository:** [https://github.com/vishalvivek14332-source/Namma-Yathra-Platform](https://github.com/vishalvivek14332-source/Namma-Yathra-Platform)  
-**Presentation & Screencast Script:** [PRESENTATION_AND_DEMO_SCRIPT.md](PRESENTATION_AND_DEMO_SCRIPT.md)
-
 ---
 
 ## 1. Project Introduction
